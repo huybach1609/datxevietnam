@@ -1,0 +1,260 @@
+/* Scoped QR cards (based on wp-content/qr-cards.html) */
+.wfcb-qr-cards {
+	--wfcb-qr-bg: transparent;
+	--wfcb-card-gap: 16px;
+	--wfcb-card-peek: 32px;
+
+	background: var(--wfcb-qr-bg);
+	position: relative;
+	width: 100%;
+	max-width: 100%;
+	padding: 0;
+}
+
+.wfcb-qr-cards .scroll-track {
+	display: flex;
+	align-items: center;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scroll-snap-type: x mandatory;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	gap: var(--wfcb-card-gap);
+	padding: 0 var(--wfcb-card-peek);
+	min-height: min(780px, calc(100vh - 140px));
+}
+
+.wfcb-qr-cards .scroll-track::-webkit-scrollbar {
+	display: none;
+}
+
+.wfcb-qr-cards .card {
+	flex: 0 0 calc(100% - var(--wfcb-card-peek) * 2 - var(--wfcb-card-gap));
+	min-height: min(740px, calc(100vh - 180px));
+	max-height: 780px;
+	scroll-snap-align: center;
+	border-radius: 28px;
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	cursor: default;
+	transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.wfcb-qr-cards .card:active {
+	transform: scale(0.98);
+}
+
+.wfcb-qr-cards .card[data-app="line"]      { background: linear-gradient(145deg, #06c755 0%, #04a344 100%); --accent: #fff; }
+.wfcb-qr-cards .card[data-app="zalo"]      { background: linear-gradient(145deg, #0068ff 0%, #0050cc 100%); --accent: #fff; }
+.wfcb-qr-cards .card[data-app="facebook"]  { background: linear-gradient(145deg, #1877f2 0%, #0b5fcc 100%); --accent: #fff; }
+.wfcb-qr-cards .card[data-app="instagram"] { background: linear-gradient(145deg, #f58529 0%, #dd2a7b 50%, #8134af 100%); --accent: #fff; }
+.wfcb-qr-cards .card[data-app="telegram"]  { background: linear-gradient(145deg, #2aabee 0%, #229ed9 100%); --accent: #fff; }
+.wfcb-qr-cards .card[data-app="whatsapp"]  { background: linear-gradient(145deg, #25d366 0%, #128c7e 100%); --accent: #fff; }
+.wfcb-qr-cards .card[data-app="tiktok"]    { background: linear-gradient(145deg, #010101 0%, #1a1a2e 100%); --accent: #fe2c55; }
+.wfcb-qr-cards .card[data-app="twitter"]   { background: linear-gradient(145deg, #14171a 0%, #1da1f2 100%); --accent: #fff; }
+
+.wfcb-qr-cards .card::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+	pointer-events: none;
+	z-index: 1;
+}
+
+.wfcb-qr-cards .card-deco {
+	position: absolute;
+	width: 420px;
+	height: 420px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.07);
+	top: -120px;
+	right: -100px;
+	pointer-events: none;
+	z-index: 1;
+}
+
+.wfcb-qr-cards .card-deco2 {
+	position: absolute;
+	width: 260px;
+	height: 260px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.05);
+	bottom: -80px;
+	left: -60px;
+	pointer-events: none;
+	z-index: 1;
+}
+
+.wfcb-qr-cards .card-inner {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+	padding: 32px 24px;
+	gap: 28px;
+}
+
+.wfcb-qr-cards .app-label {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+}
+
+.wfcb-qr-cards .app-icon {
+	width: 64px;
+	height: 64px;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.18);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.wfcb-qr-cards .app-icon img {
+	width: 36px;
+	height: 36px;
+	object-fit: contain;
+	display: block;
+}
+
+.wfcb-qr-cards .app-name {
+	font-family: inherit;
+	font-size: 28px;
+	font-weight: 800;
+	color: #fff;
+	letter-spacing: -0.5px;
+	text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.wfcb-qr-cards .app-handle {
+	font-size: 13px;
+	font-weight: 400;
+	color: rgba(255, 255, 255, 0.7);
+	letter-spacing: 0.5px;
+}
+
+.wfcb-qr-cards .qr-frame {
+	background: #fff;
+	border-radius: 20px;
+	padding: 16px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.15);
+	position: relative;
+}
+
+.wfcb-qr-cards .qr-frame img,
+.wfcb-qr-cards .qr-placeholder {
+	width: min(260px, calc(100vw - var(--wfcb-card-peek) * 2 - 80px));
+	height: min(260px, calc(100vw - var(--wfcb-card-peek) * 2 - 80px));
+	display: block;
+	border-radius: 8px;
+}
+
+.wfcb-qr-cards .qr-frame img {
+	object-fit: contain;
+}
+
+.wfcb-qr-cards .qr-placeholder {
+	background: #f0f0f0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #666;
+	font-size: 12px;
+	text-align: center;
+	padding: 12px;
+}
+
+.wfcb-qr-cards .scan-hint {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: rgba(255, 255, 255, 0.15);
+	backdrop-filter: blur(12px);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 100px;
+	padding: 10px 20px;
+	color: #fff;
+	font-size: 13px;
+	font-weight: 500;
+	letter-spacing: 0.3px;
+	cursor: pointer;
+	user-select: none;
+	transition: transform .12s ease, background-color .2s ease, border-color .2s ease, opacity .2s ease;
+}
+
+.wfcb-qr-cards .scan-hint:hover {
+	background: rgba(255, 255, 255, 0.20);
+	border-color: rgba(255, 255, 255, 0.28);
+}
+
+.wfcb-qr-cards .scan-hint:active {
+	transform: scale(0.98);
+}
+
+.wfcb-qr-cards .scan-hint:focus-visible {
+	outline: 2px solid rgba(255, 255, 255, 0.75);
+	outline-offset: 2px;
+}
+
+.wfcb-qr-cards .scan-hint.is-copied {
+	opacity: 0.95;
+}
+
+.wfcb-qr-cards .scan-hint svg {
+	width: 16px;
+	height: 16px;
+	opacity: 0.8;
+}
+
+.wfcb-qr-cards .dots {
+	display: flex;
+	gap: 6px;
+	justify-content: center;
+	margin-top: 14px;
+}
+
+.wfcb-qr-cards .dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 3px;
+	background: rgba(0, 0, 0, 0.18);
+	transition: width .3s ease, background .3s ease;
+	cursor: pointer;
+}
+
+.wfcb-qr-cards .dot.active {
+	width: 20px;
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.wfcb-qr-cards .card[data-app="tiktok"] .app-name {
+	color: #fe2c55;
+	text-shadow: 0 0 20px rgba(254, 44, 85, 0.5);
+}
+
+.wfcb-qr-cards .card[data-app="tiktok"] .scan-hint {
+	border-color: rgba(254, 44, 85, 0.4);
+	color: #fe2c55;
+}
+
+@media (max-width: 520px) {
+	.wfcb-qr-cards {
+		--wfcb-card-gap: 12px;
+		--wfcb-card-peek: 12px;
+	}
+
+	.wfcb-qr-cards .card {
+		flex: 0 0 calc(100% - var(--wfcb-card-peek) * 2);
+	}
+}
+

@@ -1,0 +1,168 @@
+.wfcb-bar {
+	position: fixed;
+	z-index: 9999;
+}
+
+.wfcb-bar .wfcb-items {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.wfcb-bar .wfcb-icon img {
+	display: block;
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
+}
+
+.wfcb-bar .wfcb-label {
+	white-space: nowrap;
+}
+
+/* Desktop positions */
+.wfcb-position-left {
+	top: 30%;
+	left: 12px;
+}
+
+.wfcb-position-right {
+	top: 30%;
+	right: 12px;
+}
+
+.wfcb-position-bottom {
+	left: 0;
+	right: 0;
+	bottom: 12px;
+}
+
+.wfcb-position-bottom .wfcb-items {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+}
+
+.wfcb-position-bottom .wfcb-item {
+	margin: 0;
+}
+
+/* Mobile layout: bottom bar, scrollable horizontally */
+@media (max-width: 768px) {
+	.wfcb-bar {
+		left: 0;
+		right: 0;
+		bottom: 0px;
+	}
+	.wfcb-position-left {
+		left: 0;
+		top: auto !important;
+	}
+	.wfcb-position-right {
+		right: 0;
+		top: auto !important;
+	}
+
+	.wfcb-bar .wfcb-items {
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 10px 8px;
+		padding-right: 22px;
+		overflow-x: auto;
+		scroll-snap-type: x proximity;
+		scroll-padding-right: 22px;
+		background: rgba(255, 255, 255, 0.5);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+		box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+	}
+
+	.wfcb-bar .wfcb-item {
+		flex: 0 0 78px;
+		margin: 0;
+		scroll-snap-align: start;
+	}
+
+	.wfcb-bar .wfcb-link {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
+		text-decoration: none;
+		color: #222;
+		font-size: 11px;
+		min-width: 100%;
+		padding: 0 4px;
+		background: transparent;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	.wfcb-bar .wfcb-label {
+		white-space: nowrap;
+	}
+}
+
+/* Desktop chip style */
+@media (min-width: 769px) {
+	.wfcb-bar .wfcb-item {
+		margin: 4px 0;
+	}
+
+	/* Mặc định: chỉ hiện icon */
+	.wfcb-bar .wfcb-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0;
+		background: rgba(255, 255, 255, 0.95);
+		border-radius: 24px;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+		padding: 6px 8px;
+		color: #222;
+		text-decoration: none;
+		font-size: 13px;
+		overflow: hidden;
+		max-width: 44px;
+		transition:
+			max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			gap 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			background 0.2s ease;
+	}
+
+	/* Ẩn label khi bình thường */
+	.wfcb-bar .wfcb-link .wfcb-label {
+		opacity: 0;
+		max-width: 0;
+		pointer-events: none;
+		white-space: nowrap;
+		overflow: hidden;
+		transition:
+			opacity 0.25s ease 0.05s,
+			max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* Hover trên container: mở rộng TẤT CẢ item cùng lúc */
+	.wfcb-bar .wfcb-items:hover .wfcb-link {
+		gap: 6px;
+		padding: 6px 12px 6px 8px;
+		max-width: 200px;
+		background: #f3f4f6;
+	}
+
+	.wfcb-bar .wfcb-items:hover .wfcb-link .wfcb-label {
+		opacity: 1;
+		max-width: 160px;
+		pointer-events: auto;
+	}
+
+	/* Item đang được hover trực tiếp nổi bật hơn */
+	.wfcb-bar .wfcb-items:hover .wfcb-link:hover {
+		background: #e8e9eb;
+		box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+	}
+}
+
