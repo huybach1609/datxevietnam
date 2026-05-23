@@ -1,0 +1,41 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs / temp
+*.log
+*.tmp
+*.temp
+
+# Node dependencies
+node_modules/
+
+# WordPress runtime/generated content
+uploads
+languages
+plugins/floating-contact-dock
+plugins/gtranslate
+plugins/wp-smtp
+
+
+languages
+mu-plugins
+themes/twentytwentyone
+themes/twentytwentytwo
+themes/twentytwentythree
+themes/twentytwentyfour
+themes/twentytwentyfive
+themes/generatepress
+
+upgrade-temp-backup
+
+# Archives / backups
+*.zip
+*.tar
+*.tar.gz
+*.sql
+*.bak

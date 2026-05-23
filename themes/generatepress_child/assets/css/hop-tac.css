@@ -1,0 +1,696 @@
+.dxvn-hoptac {
+	max-width: 1120px;
+	margin: 0 auto;
+	padding: 0 clamp(16px, 4vw, 28px) 56px;
+}
+
+.dxvn-hoptac__eyebrow {
+	display: inline-block;
+	margin-bottom: 10px;
+	padding: 6px 14px;
+	border-radius: 999px;
+	background: linear-gradient(
+		135deg,
+		rgba(43, 159, 232, 0.14) 0%,
+		rgba(217, 188, 74, 0.14) 100%
+	);
+	color: var(--dxvn-primary-dark);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.dxvn-hoptac-hero {
+	position: relative;
+	overflow: hidden;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 32px;
+	align-items: center;
+	margin-bottom: clamp(40px, 6vw, 72px);
+	padding: clamp(32px, 5vw, 56px);
+	border-radius: 24px;
+	background: linear-gradient(
+		135deg,
+		var(--dxvn-primary-dark) 0%,
+		var(--dxvn-primary) 45%,
+		#0a4a7a 100%
+	);
+	color: #f8fafc;
+	box-shadow: 0 24px 60px rgba(0, 57, 96, 0.35);
+}
+
+.dxvn-hoptac-hero::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(
+		circle at 85% 20%,
+		rgba(217, 188, 74, 0.18) 0%,
+		transparent 45%
+	);
+	pointer-events: none;
+}
+
+.dxvn-hoptac-hero__content {
+	position: relative;
+	z-index: 1;
+}
+
+/* Eyebrow on dark hero: solid pill + hi-contrast (default eyebrow uses dark text / faint fill). */
+.dxvn-hoptac-hero .dxvn-hoptac__eyebrow {
+	background: linear-gradient(
+		135deg,
+		var(--dxvn-accent-gold) 0%,
+		var(--dxvn-accent-gold-dark) 100%
+	);
+	color: var(--dxvn-dark-900);
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+	font-weight: 800;
+}
+
+.dxvn-hoptac-hero__content h1 {
+	margin: 0 0 14px;
+	font-size: clamp(26px, 4vw, 40px);
+	line-height: 1.15;
+	font-weight: 800;
+	color: #fff;
+}
+
+.dxvn-hoptac-hero__content p {
+	margin: 0 0 22px;
+	font-size: 16px;
+	line-height: 1.65;
+	color: rgba(248, 250, 252, 0.9);
+	max-width: 34em;
+}
+
+.dxvn-hoptac-hero__note {
+	display: inline-block;
+	margin: 0 0 22px;
+	padding: 10px 14px;
+	border-radius: 12px;
+	background: rgba(0, 0, 0, 0.2);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	font-size: 13px;
+	line-height: 1.5;
+	color: rgba(248, 250, 252, 0.88);
+}
+
+.dxvn-hoptac-hero__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.dxvn-hoptac-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px 22px;
+	border-radius: 999px;
+	font-size: 15px;
+	font-weight: 700;
+	text-decoration: none;
+	border: none;
+	cursor: pointer;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dxvn-hoptac-btn:active {
+	transform: translateY(1px);
+}
+
+.dxvn-hoptac-btn--primary {
+	background: linear-gradient(
+		135deg,
+		var(--dxvn-accent-gold) 0%,
+		var(--dxvn-accent-gold-dark) 100%
+	);
+	color: var(--dxvn-dark-900);
+	box-shadow: 0 10px 28px rgba(217, 188, 74, 0.35);
+}
+
+.dxvn-hoptac-btn--primary:hover {
+	box-shadow: 0 14px 36px rgba(217, 188, 74, 0.45);
+}
+
+.dxvn-hoptac-btn--ghost {
+	background: rgba(255, 255, 255, 0.1);
+	color: #fff;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.dxvn-hoptac-btn--ghost:hover {
+	background: rgba(255, 255, 255, 0.18);
+}
+
+.dxvn-hoptac-hero__aside {
+	position: relative;
+	z-index: 1;
+	aspect-ratio: 4 / 3;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	display: grid;
+	place-items: center;
+	padding: 24px;
+	text-align: center;
+}
+
+.dxvn-hoptac-hero__aside-svg {
+	max-width: 200px;
+	height: auto;
+	opacity: 0.9;
+	filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.25));
+}
+
+.dxvn-hoptac-hero__aside p {
+	margin: 16px 0 0;
+	font-size: 14px;
+	line-height: 1.55;
+	color: rgba(248, 250, 252, 0.85);
+}
+
+.dxvn-hoptac-section {
+	margin-bottom: clamp(40px, 5vw, 64px);
+}
+
+.dxvn-hoptac-section__head {
+	max-width: 720px;
+	margin-bottom: 24px;
+}
+
+.dxvn-hoptac-section__head h2 {
+	margin: 8px 0 10px;
+	font-size: clamp(22px, 3vw, 32px);
+	font-weight: 800;
+	line-height: 1.25;
+	color: var(--dxvn-text-strong);
+}
+
+.dxvn-hoptac-section__head p {
+	margin: 0;
+	color: var(--dxvn-text-body);
+	font-size: 15px;
+	line-height: 1.65;
+}
+
+.dxvn-hoptac-benefits {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 18px;
+}
+
+.dxvn-hoptac-benefits article {
+	padding: 22px 20px;
+	border-radius: 18px;
+	border: 1px solid var(--dxvn-border);
+	background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.dxvn-hoptac-benefits h3 {
+	margin: 12px 0 8px;
+	font-size: 17px;
+	font-weight: 800;
+	color: var(--dxvn-text-strong);
+	line-height: 1.35;
+}
+
+.dxvn-hoptac-benefits p {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.58;
+	color: var(--dxvn-text-body);
+}
+
+.dxvn-hoptac-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 14px;
+	display: grid;
+	place-items: center;
+	background: linear-gradient(
+		135deg,
+		var(--dxvn-primary-light) 0%,
+		var(--dxvn-primary-dark) 100%
+	);
+	color: #fff;
+	font-weight: 800;
+	font-size: 18px;
+	box-shadow: 0 8px 20px rgba(0, 91, 152, 0.25);
+}
+
+.dxvn-hoptac-criteria {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+}
+
+.dxvn-hoptac-criteria ul {
+	margin: 0;
+	padding: 26px 28px;
+	border-radius: 18px;
+	background: linear-gradient(
+		145deg,
+		rgba(0, 91, 152, 0.06) 0%,
+		rgba(217, 188, 74, 0.08) 100%
+	);
+	border: 1px solid var(--dxvn-border);
+	list-style: none;
+	color: var(--dxvn-text-body);
+	font-size: 15px;
+	line-height: 1.65;
+}
+
+.dxvn-hoptac-criteria li {
+	position: relative;
+	padding-left: 28px;
+	margin-bottom: 12px;
+}
+
+.dxvn-hoptac-criteria li:last-child {
+	margin-bottom: 0;
+}
+
+.dxvn-hoptac-criteria li::before {
+	content: "✓";
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 20px;
+	height: 20px;
+	border-radius: 6px;
+	background: var(--dxvn-primary);
+	color: #fff;
+	font-size: 12px;
+	font-weight: 800;
+	display: grid;
+	place-items: center;
+	line-height: 1;
+}
+
+.dxvn-hoptac-steps {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 14px;
+	counter-reset: hoptacstep;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.dxvn-hoptac-steps li {
+	counter-increment: hoptacstep;
+	list-style: none;
+	position: relative;
+	padding: 20px 16px;
+	border-radius: 16px;
+	border: 1px solid var(--dxvn-border);
+	background: var(--dxvn-surface);
+	box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.dxvn-hoptac-steps li::before {
+	content: counter(hoptacstep);
+	display: block;
+	width: 36px;
+	height: 36px;
+	margin-bottom: 12px;
+	border-radius: 12px;
+	background: linear-gradient(
+		135deg,
+		rgba(43, 159, 232, 0.2) 0%,
+		rgba(0, 91, 152, 0.35) 100%
+	);
+	color: var(--dxvn-primary-dark);
+	font-weight: 800;
+	font-size: 16px;
+	line-height: 36px;
+	text-align: center;
+}
+
+.dxvn-hoptac-steps h3 {
+	margin: 0 0 8px;
+	font-size: 16px;
+	font-weight: 800;
+	color: var(--dxvn-text-strong);
+	line-height: 1.3;
+}
+
+.dxvn-hoptac-steps p {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.52;
+	color: var(--dxvn-text-body);
+}
+
+.dxvn-hoptac-steps-wrapper {
+	overflow-x: auto;
+	padding-bottom: 6px;
+}
+
+.dxvn-hoptac-form-section {
+	position: relative;
+	padding: clamp(28px, 4vw, 44px);
+	border-radius: 22px;
+	background: linear-gradient(
+		165deg,
+		#ffffff 0%,
+		#f0f6fb 50%,
+		#e8f1f9 100%
+	);
+	border: 1px solid var(--dxvn-border);
+	box-shadow: 0 14px 40px rgba(0, 91, 152, 0.1);
+	scroll-margin-top: 96px;
+}
+
+.dxvn-hoptac-form-section h2 {
+	margin: 8px 0 8px;
+	font-size: clamp(22px, 3vw, 30px);
+	font-weight: 800;
+	color: var(--dxvn-text-strong);
+}
+
+.dxvn-hoptac-form-section > .dxvn-hoptac-section__head {
+	margin-bottom: 22px;
+}
+
+.dxvn-hoptac-form {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px 20px;
+}
+
+.dxvn-hoptac-form label {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--dxvn-text-strong);
+}
+
+.dxvn-hoptac-form label.dxvn-hoptac-form__full {
+	grid-column: 1 / -1;
+}
+
+.dxvn-hoptac-form input[type="text"],
+.dxvn-hoptac-form input[type="tel"],
+.dxvn-hoptac-form input[type="email"],
+.dxvn-hoptac-form textarea,
+.dxvn-hoptac-form select {
+	width: 100%;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--dxvn-border);
+	font-size: 15px;
+	font-family: inherit;
+	background: #fff;
+	color: var(--dxvn-text-body);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dxvn-hoptac-form input:focus,
+.dxvn-hoptac-form textarea:focus,
+.dxvn-hoptac-form select:focus {
+	outline: none;
+	border-color: var(--dxvn-primary-light);
+	box-shadow: 0 0 0 3px rgba(43, 159, 232, 0.2);
+}
+
+.dxvn-hoptac-form textarea {
+	min-height: 100px;
+	resize: vertical;
+}
+
+/* Must beat `.dxvn-hoptac-form label { flex-direction: column }` */
+.dxvn-hoptac-form label.dxvn-hoptac-form__checkbox {
+	flex-direction: row;
+	align-items: flex-start;
+	gap: 10px;
+	font-weight: 500;
+}
+
+.dxvn-hoptac-form label.dxvn-hoptac-form__checkbox input {
+	margin-top: 3px;
+	width: 18px;
+	height: 18px;
+	accent-color: var(--dxvn-primary);
+	flex-shrink: 0;
+}
+
+.dxvn-hoptac-form label.dxvn-hoptac-form__checkbox span {
+	flex: 1;
+	min-width: 0;
+	font-size: 14px;
+	line-height: 1.55;
+	color: var(--dxvn-text-body);
+	font-weight: 500;
+}
+
+.dxvn-hoptac-form .dxvn-hoptac-btn {
+	grid-column: 1 / -1;
+	justify-self: start;
+	margin-top: 4px;
+}
+
+.dxvn-hoptac-form__status {
+	grid-column: 1 / -1;
+	margin: 0;
+	min-height: 22px;
+	font-size: 14px;
+	line-height: 1.45;
+}
+
+.dxvn-hoptac-form__status.is-success {
+	color: #047857;
+}
+
+.dxvn-hoptac-form__status.is-error {
+	color: #b91c1c;
+}
+
+.dxvn-hoptac-section--faq > .dxvn-hoptac-section__head {
+	max-width: 640px;
+}
+
+.dxvn-hoptac-section--faq > .dxvn-hoptac-section__head h2 + p {
+	margin: 8px 0 0;
+	color: var(--dxvn-text-body);
+	font-size: 15px;
+	line-height: 1.65;
+	font-weight: 400;
+}
+
+.dxvn-hoptac-faq {
+	max-width: 1040px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: clamp(14px, 2vw, 20px);
+}
+
+.dxvn-hoptac-faq__item:nth-last-child(1):nth-child(odd) {
+	grid-column: 1 / -1;
+	max-width: 100%;
+}
+
+.dxvn-hoptac-faq__item:nth-last-child(1):nth-child(odd) .dxvn-hoptac-faq__body p {
+	max-width: 920px;
+}
+
+.dxvn-hoptac-faq__item {
+	border-radius: 18px;
+	border: 1px solid var(--dxvn-border);
+	background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+	box-shadow:
+		0 2px 6px rgba(15, 23, 42, 0.04),
+		0 12px 28px rgba(15, 23, 42, 0.06);
+	overflow: hidden;
+	transition:
+		box-shadow 0.22s ease,
+		border-color 0.22s ease,
+		transform 0.22s ease;
+}
+
+.dxvn-hoptac-faq__item:hover {
+	border-color: rgba(0, 91, 152, 0.22);
+	box-shadow:
+		0 4px 12px rgba(0, 91, 152, 0.08),
+		0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.dxvn-hoptac-faq__item[open] {
+	border-color: rgba(0, 91, 152, 0.32);
+	box-shadow:
+		0 4px 16px rgba(0, 91, 152, 0.1),
+		0 22px 48px rgba(0, 91, 152, 0.09);
+}
+
+.dxvn-hoptac-faq__item summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	cursor: pointer;
+	padding: clamp(17px, 2.6vw, 22px);
+	list-style: none;
+	font-weight: 700;
+	font-size: clamp(14px, 1.5vw, 16px);
+	line-height: 1.48;
+	color: var(--dxvn-text-strong);
+	user-select: none;
+	transition: color 0.18s ease;
+}
+
+.dxvn-hoptac-faq__item summary::-webkit-details-marker,
+.dxvn-hoptac-faq__item summary::marker {
+	display: none;
+}
+
+.dxvn-hoptac-faq__item summary:focus {
+	outline: none;
+}
+
+.dxvn-hoptac-faq__item summary:focus-visible {
+	box-shadow: inset 0 0 0 2px rgba(43, 159, 232, 0.55);
+	border-radius: 16px;
+}
+
+.dxvn-hoptac-faq__item[open] summary {
+	color: var(--dxvn-primary-dark);
+}
+
+.dxvn-hoptac-faq__q {
+	flex: 1;
+	min-width: 0;
+}
+
+.dxvn-hoptac-faq__icon {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 12px;
+	background: linear-gradient(
+		145deg,
+		rgba(43, 159, 232, 0.14) 0%,
+		rgba(0, 91, 152, 0.12) 100%
+	);
+	border: 1px solid rgba(0, 91, 152, 0.14);
+	transition:
+		background 0.2s ease,
+		border-color 0.2s ease;
+}
+
+.dxvn-hoptac-faq__icon::after {
+	content: "";
+	display: block;
+	box-sizing: border-box;
+	width: 8px;
+	height: 8px;
+	border-right: 2px solid var(--dxvn-primary);
+	border-bottom: 2px solid var(--dxvn-primary);
+	/* L-border tạo góc “mỏ nhọn”; nâng nhẹ để thị giác cân giữa ô */
+	transform: rotate(45deg) translateY(-1.5px);
+	transform-origin: center;
+	transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dxvn-hoptac-faq__item[open] .dxvn-hoptac-faq__icon {
+	background: linear-gradient(
+		145deg,
+		rgba(43, 159, 232, 0.22) 0%,
+		rgba(0, 91, 152, 0.18) 100%
+	);
+	border-color: rgba(0, 91, 152, 0.22);
+}
+
+.dxvn-hoptac-faq__item[open] .dxvn-hoptac-faq__icon::after {
+	transform: rotate(225deg) translateY(-1.5px);
+}
+
+.dxvn-hoptac-faq__body {
+	padding: 0 clamp(17px, 2.6vw, 22px) clamp(17px, 2.6vw, 22px);
+}
+
+.dxvn-hoptac-faq__body p {
+	margin: 0;
+	padding: 14px 16px;
+	border-radius: 12px;
+	background: rgba(0, 91, 152, 0.055);
+	box-shadow: inset 0 0 0 1px rgba(0, 91, 152, 0.06);
+	border-left: 4px solid var(--dxvn-primary-light);
+	font-size: 14px;
+	line-height: 1.68;
+	color: var(--dxvn-text-body);
+}
+
+.dxvn-hoptac-footer-note {
+	padding: 20px;
+	border-radius: 14px;
+	background: rgba(15, 23, 42, 0.04);
+	font-size: 13px;
+	line-height: 1.6;
+	color: var(--dxvn-text-body);
+	border: 1px dashed var(--dxvn-border);
+}
+
+@media (max-width: 1024px) {
+	.dxvn-hoptac-benefits {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.dxvn-hoptac-steps {
+		grid-template-columns: repeat(3, minmax(180px, 1fr));
+		min-width: min-content;
+	}
+}
+
+@media (max-width: 900px) {
+	.dxvn-hoptac-hero {
+		grid-template-columns: 1fr;
+		padding: clamp(28px, 5vw, 40px);
+	}
+
+	.dxvn-hoptac-hero__aside {
+		order: -1;
+		aspect-ratio: 16 / 9;
+	}
+}
+
+@media (max-width: 720px) {
+	.dxvn-hoptac-benefits {
+		grid-template-columns: 1fr;
+	}
+
+	.dxvn-hoptac-criteria {
+		grid-template-columns: 1fr;
+	}
+
+	.dxvn-hoptac-steps {
+		grid-template-columns: repeat(5, minmax(200px, 1fr));
+	}
+
+	.dxvn-hoptac-form {
+		grid-template-columns: 1fr;
+	}
+
+	.dxvn-hoptac-faq {
+		grid-template-columns: 1fr;
+	}
+
+	.dxvn-hoptac-faq__item:nth-last-child(1):nth-child(odd) {
+		grid-column: auto;
+		max-width: none;
+	}
+
+	.dxvn-hoptac-faq__item:nth-last-child(1):nth-child(odd) .dxvn-hoptac-faq__body p {
+		max-width: none;
+	}
+}

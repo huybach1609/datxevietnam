@@ -1,0 +1,103 @@
+.dxvn-pwa-prompt {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 999999;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.dxvn-pwa-prompt__body {
+  width: min(440px, 100%);
+  pointer-events: auto;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 91, 152, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.dxvn-pwa-prompt__title {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.dxvn-pwa-prompt__desc {
+  margin: 0;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.dxvn-pwa-prompt__desc span {
+  display: block;
+}
+
+.dxvn-pwa-prompt__desc span + span {
+  margin-top: 4px;
+}
+
+.dxvn-pwa-prompt__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dxvn-pwa-prompt__btn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dxvn-pwa-prompt__btn--primary {
+  background: linear-gradient(135deg, #2b9fe8 0%, #005b98 100%);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(0, 91, 152, 0.22);
+}
+
+.dxvn-pwa-prompt__btn--ghost {
+  background: #eff6ff;
+  color: #0f3a63;
+}
+
+.dxvn-pwa-prompt__link {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .dxvn-pwa-prompt {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .dxvn-pwa-prompt__body {
+    border-radius: 18px;
+    padding: 14px;
+  }
+
+  .dxvn-pwa-prompt__actions {
+    flex-direction: column;
+  }
+
+  .dxvn-pwa-prompt__btn {
+    width: 100%;
+  }
+}
