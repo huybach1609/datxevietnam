@@ -208,7 +208,7 @@ class MTTF_Shortcode {
 		$hero_style   = '' !== $hero_bg_url ? ' style="background-image: url(\'' . esc_url( $hero_bg_url ) . '\');"' : '';
 		$hero_title_1_html = str_replace(
 			'Đặt Vé Limousine',
-			'<span class="mttf-title-highlight">Đặt Vé Limousine</span>',
+			'<span class="mttf-title-highlight">Đặt Vé Xe</span>',
 			esc_html( $hero_title_1 )
 		);
 		$hero_title_1_html = str_replace(

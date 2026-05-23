@@ -298,7 +298,7 @@ class MTTF_Settings {
 			'mttf_hero_section',
 			array(
 				'key'         => 'hero_title_1',
-				'placeholder' => 'Nền tảng Đặt Vé Limousine toàn Việt Nam',
+				'placeholder' => 'Nền tảng Đặt Vé Xe toàn Việt Nam',
 			)
 		);
 
