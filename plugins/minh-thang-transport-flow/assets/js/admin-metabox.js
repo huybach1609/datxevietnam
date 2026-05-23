@@ -1,6 +1,6 @@
 (function ($) {
-  function renderPreview(ids) {
-    var $preview = $("#mttf_gallery_preview");
+  function renderPreview(ids, previewSelector) {
+    var $preview = $(previewSelector);
     $preview.empty();
     ids.forEach(function (id) {
       var attachment = wp.media.attachment(id);
@@ -25,11 +25,13 @@
     });
   }
 
-  $(function () {
-    var $input = $("#mttf_gallery_ids");
+  function bindGalleryField(config) {
+    var $input = $(config.inputSelector);
+    if (!$input.length) return;
+
     var mediaFrame;
 
-    $("#mttf_select_gallery").on("click", function (e) {
+    $(config.selectSelector).on("click", function (e) {
       e.preventDefault();
 
       if (mediaFrame) {
@@ -38,8 +40,8 @@
       }
 
       mediaFrame = wp.media({
-        title: "Chọn ảnh cho card",
-        button: { text: "Dùng ảnh đã chọn" },
+        title: config.title,
+        button: { text: config.buttonText },
         multiple: true,
       });
 
@@ -52,16 +54,36 @@
           .filter(Boolean);
 
         $input.val(ids.join(","));
-        renderPreview(ids);
+        renderPreview(ids, config.previewSelector);
       });
 
       mediaFrame.open();
     });
 
-    $("#mttf_clear_gallery").on("click", function (e) {
+    $(config.clearSelector).on("click", function (e) {
       e.preventDefault();
       $input.val("");
-      $("#mttf_gallery_preview").empty();
+      $(config.previewSelector).empty();
+    });
+  }
+
+  $(function () {
+    bindGalleryField({
+      inputSelector: "#mttf_gallery_ids",
+      selectSelector: "#mttf_select_gallery",
+      clearSelector: "#mttf_clear_gallery",
+      previewSelector: "#mttf_gallery_preview",
+      title: "Chọn ảnh cho card",
+      buttonText: "Dùng ảnh đã chọn",
+    });
+
+    bindGalleryField({
+      inputSelector: "#mttf_operator_gallery_ids",
+      selectSelector: "#mttf_operator_select_gallery",
+      clearSelector: "#mttf_operator_clear_gallery",
+      previewSelector: "#mttf_operator_gallery_preview",
+      title: "Chọn ảnh gallery cho nhà xe",
+      buttonText: "Dùng ảnh đã chọn",
     });
   });
 })(jQuery);

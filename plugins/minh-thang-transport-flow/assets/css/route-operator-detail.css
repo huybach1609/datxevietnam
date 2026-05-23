@@ -1,0 +1,67 @@
+.mttf-route-page--operator-detail .mttf-directory-hero,
+.mttf-route-page--route-detail .mttf-directory-hero {
+  background:
+    var(--mttf-gradient-operator-surface),
+    var(--mttf-surface);
+}
+
+.mttf-route-page--operator-detail .mttf-search--directory {
+  margin-bottom: var(--mttf-space-8);
+}
+
+.mttf-route-page--operator-detail .mttf-hub__title,
+.mttf-route-page--route-detail .mttf-hub__title {
+  margin-bottom: var(--mttf-space-6);
+}
+
+.mttf-route-page--operator-detail .mttf-operator-route-grid,
+.mttf-route-page--route-detail .mttf-route-operator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--mttf-space-6);
+}
+
+.mttf-route-page--operator-detail .mttf-operator-route-card,
+.mttf-route-page--route-detail .mttf-operator-route-card {
+  min-width: 0;
+  max-width: none;
+}
+
+.mttf-route-page--operator-detail .mttf-operator-route-card__body,
+.mttf-route-page--route-detail .mttf-operator-route-card__body {
+  display: contents;
+}
+
+.mttf-route-page--operator-detail .mttf-operator-route-card__brand-row,
+.mttf-route-page--route-detail .mttf-operator-route-card__brand-row {
+  margin: -2px 0 8px;
+  color: var(--mttf-color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--mttf-letter-spacing-label);
+}
+
+.mttf-route-page--operator-detail .mttf-operator-route-card__actions,
+.mttf-route-page--route-detail .mttf-operator-route-card__actions {
+  margin-top: 0;
+}
+
+@media (max-width: 1024px) {
+  .mttf-route-page--operator-detail .mttf-operator-route-grid,
+  .mttf-route-page--route-detail .mttf-route-operator-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .mttf-route-page--operator-detail .mttf-operator-route-grid,
+  .mttf-route-page--route-detail .mttf-route-operator-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mttf-route-page--operator-detail .mttf-operator-route-card__actions,
+  .mttf-route-page--route-detail .mttf-operator-route-card__actions {
+    grid-template-columns: 1fr;
+  }
+}

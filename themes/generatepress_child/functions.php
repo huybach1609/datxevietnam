@@ -72,6 +72,26 @@ function dxvn_render_custom_footer() {
 	get_template_part( 'template-parts/footer/site', 'footer-custom' );
 }
 
+add_filter( 'generate_sidebar_layout', 'dxvn_disable_sidebar_for_route_directory' );
+function dxvn_disable_sidebar_for_route_directory( $layout ) {
+	if ( ! is_page() ) {
+		return $layout;
+	}
+
+	$post = get_queried_object();
+	if ( ! ( $post instanceof WP_Post ) ) {
+		return $layout;
+	}
+
+	$has_route_shortcode = has_shortcode( (string) $post->post_content, 'mttf_route' ) || has_shortcode( (string) $post->post_content, 'mttf_route_directory' );
+
+	if ( 'route' === $post->post_name || $has_route_shortcode ) {
+		return 'no-sidebar';
+	}
+
+	return $layout;
+}
+
 add_action( 'admin_menu', 'dxvn_register_header_settings_page' );
 function dxvn_register_header_settings_page() {
 	add_theme_page(
@@ -1338,6 +1358,16 @@ add_filter( 'generate_show_title', 'dxvn_hide_homepage_title' );
 function dxvn_hide_homepage_title( $show ) {
 	if ( is_front_page() && is_page() ) {
 		return false;
+	}
+
+	if ( is_page() ) {
+		$post = get_queried_object();
+		if ( $post instanceof WP_Post ) {
+			$has_route_shortcode = has_shortcode( (string) $post->post_content, 'mttf_route' ) || has_shortcode( (string) $post->post_content, 'mttf_route_directory' );
+			if ( 'route' === $post->post_name || $has_route_shortcode ) {
+				return false;
+			}
+		}
 	}
 
 	return $show;

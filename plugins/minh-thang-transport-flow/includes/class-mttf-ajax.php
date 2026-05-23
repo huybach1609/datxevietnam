@@ -49,6 +49,10 @@ class MTTF_Ajax {
 		$route_title = sanitize_text_field( wp_unslash( $_POST['route_title'] ?? '' ) );
 		$route_slug  = sanitize_text_field( wp_unslash( $_POST['route_slug'] ?? '' ) );
 		$region      = sanitize_text_field( wp_unslash( $_POST['route_region'] ?? '' ) );
+		$operator_id   = absint( $_POST['operator_id'] ?? 0 );
+		$operator_name = sanitize_text_field( wp_unslash( $_POST['operator_name'] ?? '' ) );
+		$operator_slug = sanitize_text_field( wp_unslash( $_POST['operator_slug'] ?? '' ) );
+		$page_type     = sanitize_text_field( wp_unslash( $_POST['page_type'] ?? '' ) );
 		$source_page = esc_url_raw( wp_unslash( $_POST['source_page'] ?? '' ) );
 		$utm_data    = self::sanitize_utm_data( $_POST );
 		$contact_apps = self::sanitize_contact_apps( $_POST['contact_apps'] ?? array() );
@@ -67,8 +71,8 @@ class MTTF_Ajax {
 			self::mark_rate_limit( $phone );
 			self::mark_ip_rate_limit();
 		}
-		self::send_email( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps );
-		self::send_telegram( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps );
+		self::send_email( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps, $operator_id, $operator_name, $operator_slug, $page_type );
+		self::send_telegram( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps, $operator_id, $operator_name, $operator_slug, $page_type );
 
 		do_action(
 			'mttf_lead_captured',
@@ -77,6 +81,9 @@ class MTTF_Ajax {
 				'route_id'   => $route_id,
 				'route_slug' => $route_slug,
 				'region'     => $region,
+				'operator_id' => $operator_id,
+				'operator_slug' => $operator_slug,
+				'page_type'  => $page_type,
 				'utm'        => $utm_data,
 				'contact_apps' => $contact_apps,
 			)
@@ -177,14 +184,20 @@ class MTTF_Ajax {
 		);
 	}
 
-	private static function send_email( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps ) {
+	private static function send_email( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps, $operator_id = 0, $operator_name = '', $operator_slug = '', $page_type = '' ) {
 		$to = self::resolve_lead_email_recipients( $route_id );
 		$subject = sprintf( '[MTTF Lead] %s - %s', $route_title, $phone );
 		$message = "Lead moi tu website\n";
 		$message .= 'So dien thoai: ' . $phone . "\n";
 		$message .= 'Ứng dụng liên hệ: ' . ( ! empty( $contact_apps ) ? implode( ', ', $contact_apps ) : 'Không chọn' ) . "\n";
 		$message .= 'Tuyến: ' . $route_title . ' (' . $route_slug . ')' . "\n";
+		if ( $operator_id > 0 || '' !== $operator_name ) {
+			$message .= 'Nhà xe: ' . $operator_name . ' (' . $operator_slug . ')' . "\n";
+		}
 		$message .= 'Khu vực: ' . $region . "\n";
+		if ( '' !== $page_type ) {
+			$message .= 'Page type: ' . $page_type . "\n";
+		}
 		$message .= 'Trang: ' . $source_page . "\n";
 		$message .= 'UTM: ' . wp_json_encode( $utm_data ) . "\n";
 		$message .= 'Thời gian: ' . wp_date( 'Y-m-d H:i:s' ) . "\n";
@@ -232,7 +245,7 @@ class MTTF_Ajax {
 		return (string) apply_filters( 'mttf_lead_email_to', $default_to, $route_id );
 	}
 
-	private static function send_telegram( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps ) {
+	private static function send_telegram( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps, $operator_id = 0, $operator_name = '', $operator_slug = '', $page_type = '' ) {
 		$default_token = MTTF_Settings::get( 'telegram_bot_token', '' );
 		$token         = trim( (string) apply_filters( 'mttf_telegram_bot_token', $default_token ) );
 		if ( '' === $token ) {
@@ -254,6 +267,12 @@ class MTTF_Ajax {
 
 		$text  = 'Bạn nhận được 1 yêu cầu tư vấn từ xxx' . self::get_phone_last_three( $phone ) . ".\n";
 		$text .= 'Tên tuyến: ' . $route_title . "\n";
+		if ( $operator_id > 0 || '' !== $operator_name ) {
+			$text .= 'Nhà xe: ' . $operator_name . ' (' . $operator_slug . ')' . "\n";
+		}
+		if ( '' !== $page_type ) {
+			$text .= 'Page type: ' . $page_type . "\n";
+		}
 		$text .= 'SĐT: ' . $phone . "\n";
 		$text .= 'Ứng dụng liên hệ: ' . ( ! empty( $contact_apps ) ? implode( ', ', $contact_apps ) : 'Không chọn' ) . "\n";
 		$text .= "Vui lòng gọi lại tư vấn ngay & không phản hồi email này.\n";

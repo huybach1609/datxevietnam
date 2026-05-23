@@ -36,6 +36,10 @@ require_once MTTF_PATH . 'includes/class-mttf-cpt.php';
 
 require_once MTTF_PATH . 'includes/class-mttf-metabox.php';
 
+require_once MTTF_PATH . 'includes/class-mttf-operator.php';
+
+require_once MTTF_PATH . 'includes/class-mttf-route-operators.php';
+
 require_once MTTF_PATH . 'includes/class-mttf-shortcode.php';
 
 require_once MTTF_PATH . 'includes/class-mttf-settings.php';
@@ -82,6 +86,10 @@ add_action(
 
 		MTTF_Metabox::init();
 
+		MTTF_Operator::init();
+
+		MTTF_Route_Operators::init();
+
 		MTTF_Shortcode::init();
 
 		MTTF_Settings::init();
@@ -101,4 +109,3 @@ add_action(
 	}
 
 );
-

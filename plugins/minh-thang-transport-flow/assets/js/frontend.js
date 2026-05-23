@@ -74,10 +74,15 @@
     }
 
     var card = el.closest(".mttf-card");
+    var page = el.closest(".mttf-route-page");
     window.dataLayer.push({
       event: "mttf_" + (el.dataset.trackEvent || "click"),
+      cta_label: el.dataset.trackLabel || (el.textContent || "").trim(),
+      page_type: (page && page.dataset.pageType) || "",
       route_id: (card && card.dataset.routeId) || "",
       route_slug: (card && card.dataset.routeSlug) || "",
+      operator_id: (card && card.dataset.operatorId) || (page && page.dataset.operatorId) || "",
+      operator_slug: (card && card.dataset.operatorSlug) || (page && page.dataset.operatorSlug) || "",
     });
   }
 
@@ -161,10 +166,18 @@
 
     function openFromCard(card) {
       if (!card) return;
+      var page = card.closest(".mttf-route-page");
       form.route_id.value = card.dataset.routeId || "";
       form.route_title.value = card.dataset.routeTitle || "";
       form.route_slug.value = card.dataset.routeSlug || "";
       form.route_region.value = card.dataset.routeRegion || "";
+      form.operator_id.value =
+        card.dataset.operatorId || (page && page.dataset.operatorId) || "";
+      form.operator_name.value =
+        card.dataset.operatorName || (page && page.dataset.operatorName) || "";
+      form.operator_slug.value =
+        card.dataset.operatorSlug || (page && page.dataset.operatorSlug) || "";
+      form.page_type.value = (page && page.dataset.pageType) || "";
       routeNameEl.textContent = "Tuyến bạn chọn: " + (card.dataset.routeTitle || "");
       if (titleEl) {
         titleEl.textContent = "Bạn cần xe đi " + (card.dataset.routeTitle || "tuyến này") + "?";
@@ -190,10 +203,31 @@
         return;
       }
 
+      if (clickedInsideCard.classList.contains("mttf-route-discovery-card")) {
+        if (target.closest("a, button, input, select, textarea, label")) {
+          return;
+        }
+
+        if (clickedInsideCard.dataset.detailUrl) {
+          window.location.href = clickedInsideCard.dataset.detailUrl;
+        }
+        return;
+      }
+
       var modalTrigger = target.closest(".mttf-open-modal");
       if (modalTrigger) {
         event.preventDefault();
         openFromCard(clickedInsideCard);
+        return;
+      }
+
+      if (
+        target.closest(".mttf-card__detail-link") ||
+        target.closest(".mttf-route-discovery-card__media-link") ||
+        target.closest(".mttf-route-discovery-card__link") ||
+        target.closest(".mttf-operator-card__link") ||
+        target.closest(".mttf-route-operator-card__link")
+      ) {
         return;
       }
 
@@ -721,6 +755,28 @@
     });
   }
 
+  function initHeroSlides() {
+    document.querySelectorAll(".mttf-directory-hero__media").forEach(function (media) {
+      var slides = Array.prototype.slice.call(media.querySelectorAll(".mttf-directory-hero__image"));
+      if (slides.length <= 1) return;
+
+      var intervalSeconds = parseInt(media.dataset.heroSlideInterval || "5", 10);
+      if (!intervalSeconds || intervalSeconds < 2) intervalSeconds = 5;
+      var intervalMs = intervalSeconds * 1000;
+
+      var currentIndex = slides.findIndex(function (slide) {
+        return slide.classList.contains("is-active");
+      });
+      if (currentIndex < 0) currentIndex = 0;
+
+      setInterval(function () {
+        slides[currentIndex].classList.remove("is-active");
+        currentIndex = (currentIndex + 1) % slides.length;
+        slides[currentIndex].classList.add("is-active");
+      }, intervalMs);
+    });
+  }
+
   function initDesktopAutoLoadCards() {
     if (window.innerWidth < 1024) {
       return;
@@ -922,7 +978,7 @@
       if (searchInput.value && searchInput.value.trim() !== "") {
         return;
       }
-      searchInput.placeholder = "Ví dụ: " + places[index];
+      searchInput.placeholder = places[index];
       index = (index + 1) % places.length;
     }
 
@@ -1255,6 +1311,7 @@
   function boot() {
     setTouchData();
     initModal();
+    initHeroSlides();
     initCardSliders();
     initDesktopAutoLoadCards();
     initLiveSearch();

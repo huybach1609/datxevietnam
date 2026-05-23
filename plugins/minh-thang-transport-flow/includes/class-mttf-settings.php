@@ -338,6 +338,54 @@ class MTTF_Settings {
 			)
 		);
 
+		add_settings_field(
+			'route_section_title_bac',
+			'Tiêu đề section miền Bắc',
+			array( __CLASS__, 'render_input' ),
+			self::SETTINGS_PAGE_HERO,
+			'mttf_hero_section',
+			array(
+				'key'         => 'route_section_title_bac',
+				'placeholder' => 'Gợi ý tuyến miền Bắc cho bạn',
+			)
+		);
+
+		add_settings_field(
+			'route_section_title_trung',
+			'Tiêu đề section miền Trung',
+			array( __CLASS__, 'render_input' ),
+			self::SETTINGS_PAGE_HERO,
+			'mttf_hero_section',
+			array(
+				'key'         => 'route_section_title_trung',
+				'placeholder' => 'Gợi ý tuyến miền Trung cho bạn',
+			)
+		);
+
+		add_settings_field(
+			'route_section_title_nam',
+			'Tiêu đề section miền Nam',
+			array( __CLASS__, 'render_input' ),
+			self::SETTINGS_PAGE_HERO,
+			'mttf_hero_section',
+			array(
+				'key'         => 'route_section_title_nam',
+				'placeholder' => 'Gợi ý tuyến miền Nam cho bạn',
+			)
+		);
+
+		add_settings_field(
+			'route_section_title_default',
+			'Tiêu đề section mặc định',
+			array( __CLASS__, 'render_input' ),
+			self::SETTINGS_PAGE_HERO,
+			'mttf_hero_section',
+			array(
+				'key'         => 'route_section_title_default',
+				'placeholder' => 'Gợi ý tuyến phù hợp cho bạn',
+			)
+		);
+
 		add_settings_section(
 			'mttf_telegram_section',
 			'Telegram',
@@ -421,6 +469,10 @@ class MTTF_Settings {
 			'hero_title_2'                             => '',
 			'hero_title_3'                             => '',
 			'hero_background_url'                       => '',
+			'route_section_title_bac'                  => '',
+			'route_section_title_trung'                => '',
+			'route_section_title_nam'                  => '',
+			'route_section_title_default'              => '',
 			'enable_spam_protection'                   => 1,
 			'lead_lock_seconds'                        => 45,
 			'enable_activity_pings'                     => 1,
@@ -472,6 +524,18 @@ class MTTF_Settings {
 		}
 		if ( array_key_exists( 'hero_background_url', $input ) ) {
 			$out['hero_background_url'] = esc_url_raw( $input['hero_background_url'] );
+		}
+		if ( array_key_exists( 'route_section_title_bac', $input ) ) {
+			$out['route_section_title_bac'] = sanitize_text_field( $input['route_section_title_bac'] );
+		}
+		if ( array_key_exists( 'route_section_title_trung', $input ) ) {
+			$out['route_section_title_trung'] = sanitize_text_field( $input['route_section_title_trung'] );
+		}
+		if ( array_key_exists( 'route_section_title_nam', $input ) ) {
+			$out['route_section_title_nam'] = sanitize_text_field( $input['route_section_title_nam'] );
+		}
+		if ( array_key_exists( 'route_section_title_default', $input ) ) {
+			$out['route_section_title_default'] = sanitize_text_field( $input['route_section_title_default'] );
 		}
 		if ( array_key_exists( 'enable_spam_protection', $input ) ) {
 			$out['enable_spam_protection'] = empty( $input['enable_spam_protection'] ) ? 0 : 1;
