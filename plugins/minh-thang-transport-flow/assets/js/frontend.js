@@ -341,6 +341,52 @@
     var routeImageEl = modal.querySelector("[data-mttf-route-image]");
     var form = modal.querySelector(".mttf-lead-form");
     var formApi = initLeadCaptureForm(form);
+    var modalContent = modal.querySelector(".mttf-modal__content");
+    var closeTimer = null;
+
+    function showModal() {
+      if (closeTimer) {
+        clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+
+      modal.hidden = false;
+      modal.classList.remove("is-closing");
+      window.requestAnimationFrame(function () {
+        modal.classList.add("is-open");
+      });
+    }
+
+    function hideModal() {
+      if (modal.hidden || modal.classList.contains("is-closing")) {
+        return false;
+      }
+
+      modal.classList.remove("is-open");
+      modal.classList.add("is-closing");
+      return true;
+    }
+
+    function finishHideModal() {
+      if (!modal.classList.contains("is-closing")) {
+        return;
+      }
+
+      modal.hidden = true;
+      modal.classList.remove("is-closing");
+      if (closeTimer) {
+        clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+    }
+
+    if (modalContent) {
+      modalContent.addEventListener("transitionend", function (event) {
+        if (event.target === modalContent && event.propertyName === "transform") {
+          finishHideModal();
+        }
+      });
+    }
 
     function openFromCard(card) {
       if (!card) return;
@@ -369,7 +415,7 @@
         formApi.setStatus("");
         formApi.renderCooldown();
       }
-      modal.hidden = false;
+      showModal();
     }
 
     document.addEventListener("click", function (event) {
@@ -424,7 +470,9 @@
 
     document.querySelectorAll(".mttf-close-modal").forEach(function (closer) {
       closer.addEventListener("click", function () {
-        modal.hidden = true;
+        if (hideModal()) {
+          closeTimer = setTimeout(finishHideModal, 220);
+        }
       });
     });
   }

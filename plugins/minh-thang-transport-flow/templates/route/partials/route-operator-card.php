@@ -5,9 +5,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <article class="mttf-card mttf-operator-route-card mttf-route-operator-card" data-route-id="<?php echo esc_attr( (string) $route_id ); ?>" data-route-title="<?php echo esc_attr( $route_title ); ?>" data-route-slug="<?php echo esc_attr( $route_slug ); ?>" data-route-region="<?php echo esc_attr( $route_region ); ?>" data-route-image="<?php echo esc_url( $image_url ); ?>" data-operator-id="<?php echo esc_attr( (string) $operator_id ); ?>" data-operator-name="<?php echo esc_attr( $operator_name ); ?>" data-operator-slug="<?php echo esc_attr( $operator_slug ); ?>">
 	<div class="mttf-card__media">
-		<div class="mttf-card__badges">
-			<span class="mttf-badge mttf-badge--dat_xe_viet_nam_chon_loc">Đang khai thác</span>
-		</div>
+		<?php if ( ! empty( $hot_badges ) ) : ?>
+			<div class="mttf-card__badges">
+				<?php foreach ( $hot_badges as $badge ) : ?>
+					<span class="mttf-badge mttf-badge--<?php echo esc_attr( (string) ( $badge['key'] ?? '' ) ); ?>"><?php echo esc_html( (string) ( $badge['label'] ?? '' ) ); ?></span>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
 		<img class="mttf-card__image is-active" src="<?php echo esc_url( $image_url ); ?>" alt="<?php echo esc_attr( $route_title ); ?>" loading="lazy" />
 	</div>
 	<div class="mttf-operator-route-card__body">
@@ -38,7 +42,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php endif; ?>
 		</div>
 		<div class="mttf-card__actions mttf-operator-route-card__actions">
-			<button type="button" class="mttf-btn mttf-btn--call mttf-open-modal mttf-js-track" data-track-event="book_click" data-track-label="route_card_call_now">Gọi ngay</button>
+			<button type="button" class="mttf-btn mttf-btn--call mttf-open-modal mttf-js-track" data-track-event="book_click" data-track-label="route_card_call_now">Đặt ngay</button>
 			<a class="mttf-btn mttf-btn--zalo mttf-js-track" href="<?php echo esc_url( $zalo_url ); ?>" target="_blank" rel="noopener" data-track-event="zalo_click" data-track-label="route_card_zalo">Zalo</a>
 		</div>
 		<!-- <a class="mttf-route-operator-card__operator" href="<?php echo esc_url( $operator_url ); ?>" aria-label="<?php echo esc_attr( 'Xem các tuyến của ' . $operator_name ); ?>">

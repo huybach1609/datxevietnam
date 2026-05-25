@@ -739,12 +739,29 @@ class MTTF_Shortcode {
 		$image_url       = (string) get_the_post_thumbnail_url( $post_id, 'medium_large' );
 		$rating_score    = (string) get_post_meta( $post_id, '_mttf_rating_score', true );
 		$review_count    = (string) get_post_meta( $post_id, '_mttf_review_count', true );
+		$hot_badges      = (array) get_post_meta( $post_id, '_mttf_hot_badges', true );
+		$search_count    = (int) get_post_meta( $post_id, '_mttf_search_count', true );
 		$operator_rows   = class_exists( 'MTTF_Route_Operators' ) ? MTTF_Route_Operators::get_route_operator_rows( $post_id, true ) : array();
 		$operator_count  = count( $operator_rows );
 
 		if ( '' === $image_url ) {
 			$image_url = self::get_default_route_hero_image();
 		}
+
+		if ( $search_count >= 3 && ! in_array( 'tuyen_hot', $hot_badges, true ) ) {
+			array_unshift( $hot_badges, 'tuyen_hot' );
+		}
+
+		$hot_badges = array_values( array_unique( array_filter( $hot_badges ) ) );
+		$hot_badges_prepared = array_map(
+			static function ( $badge ) {
+				return array(
+					'key'   => (string) $badge,
+					'label' => self::get_hot_badge_label( (string) $badge ),
+				);
+			},
+			$hot_badges
+		);
 
 		return array(
 			'post_id'         => $post_id,
@@ -757,6 +774,7 @@ class MTTF_Shortcode {
 			'image_url'       => $image_url,
 			'rating_score'    => $rating_score,
 			'review_count'    => $review_count,
+			'hot_badges'      => $hot_badges_prepared,
 			'operator_count'  => $operator_count,
 		);
 	}
@@ -857,10 +875,22 @@ class MTTF_Shortcode {
 		$route_image      = (string) get_the_post_thumbnail_url( $route_post_id, 'medium_large' );
 		$route_rating     = (string) get_post_meta( $route_post_id, '_mttf_rating_score', true );
 		$route_reviews    = (string) get_post_meta( $route_post_id, '_mttf_review_count', true );
+		$route_hot_badges = (array) get_post_meta( $route_post_id, '_mttf_hot_badges', true );
+		$route_search_count = (int) get_post_meta( $route_post_id, '_mttf_search_count', true );
 
 		if ( '' === $route_image ) {
 			$route_image = self::get_default_route_hero_image();
 		}
+
+		if ( $route_search_count >= 3 && ! in_array( 'tuyen_hot', $route_hot_badges, true ) ) {
+			array_unshift( $route_hot_badges, 'tuyen_hot' );
+		}
+
+		$route_hot_badges = array_values( array_unique( array_filter( $route_hot_badges ) ) );
+		$route_hot_badges_prepared = array_map(
+			array( __CLASS__, 'prepare_hot_badge' ),
+			$route_hot_badges
+		);
 
 		ob_start();
 		?>
@@ -892,6 +922,7 @@ class MTTF_Shortcode {
 						'image_url'       => $route_image,
 						'rating_score'    => $route_rating,
 						'review_count'    => $route_reviews,
+						'hot_badges'      => $route_hot_badges_prepared,
 						'phone'           => $contact_phone,
 						'phone_href'      => $contact_href,
 						'zalo_url'        => $contact_zalo,
@@ -1627,6 +1658,15 @@ class MTTF_Shortcode {
 		);
 
 		return $labels[ $badge_key ] ?? ucwords( str_replace( '_', ' ', (string) $badge_key ) );
+	}
+
+	private static function prepare_hot_badge( $badge_key ) {
+		$badge_key = (string) $badge_key;
+
+		return array(
+			'key'   => $badge_key,
+			'label' => self::get_hot_badge_label( $badge_key ),
+		);
 	}
 
 	private static function parse_gallery_ids( $raw_ids ) {

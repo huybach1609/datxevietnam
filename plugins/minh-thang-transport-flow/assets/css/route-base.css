@@ -297,6 +297,7 @@
   margin: 0;
   overflow: hidden;
   font-size: 14px;
+  font-weight: 600;
   line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -547,7 +548,7 @@
   min-height: 52px;
   padding: 0 16px;
   border: 1.5px solid var(--mttf-directory-hero-chip-border);
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--mttf-directory-hero-chip-surface-strong);
   color: var(--mttf-text);
   font-size: var(--mttf-font-size-body-md);
