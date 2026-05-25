@@ -11,6 +11,17 @@ $operator_featured = get_the_post_thumbnail_url( $operator_id, 'large' );
 $operator_images = array_values( array_unique( array_filter( array_merge( $operator_gallery, array( $operator_featured ? (string) $operator_featured : '' ) ) ) ) );
 $operator_image  = ! empty( $operator_images ) ? (string) $operator_images[0] : '';
 $shared_contacts = $get_shared_contact_details();
+$hero_lead_routes = array();
+
+foreach ( $routes as $hero_route ) {
+	$hero_route_id = (int) $hero_route->ID;
+	$hero_lead_routes[] = array(
+		'route_id'    => $hero_route_id,
+		'route_title' => (string) get_the_title( $hero_route ),
+		'route_slug'  => (string) get_post_meta( $hero_route_id, '_mttf_route_slug', true ),
+		'region'      => (string) get_post_meta( $hero_route_id, '_mttf_hub_region', true ),
+	);
+}
 ?>
 <div class="mttf mttf-directory mttf-route-page mttf-route-page--operator-detail" data-route-priority="" data-page-type="operator-detail" data-operator-id="<?php echo esc_attr( (string) $operator_id ); ?>" data-operator-name="<?php echo esc_attr( get_the_title( $operator ) ); ?>" data-operator-slug="<?php echo esc_attr( (string) get_post_field( 'post_name', $operator_id ) ); ?>">
 	<?php echo $render_directory_hero( array(
@@ -29,6 +40,16 @@ $shared_contacts = $get_shared_contact_details();
 		'summary_items' => array(
 			array( 'label' => 'Khu vực', 'value' => $get_region_title_compact( $operator_region ) ),
 			array( 'label' => 'Số tuyến', 'value' => (string) count( $routes ) ),
+		),
+		'lead_form'     => array(
+			'title'         => 'Giữ chỗ nhanh theo tuyến',
+			'subtitle'      => 'Chọn tuyến bạn muốn đi, để lại số điện thoại và chuyên viên sẽ gọi lại trong vài phút.',
+			'select_label'  => 'Tuyến cần tư vấn',
+			'page_type'     => 'operator-detail',
+			'operator_id'   => $operator_id,
+			'operator_name' => (string) get_the_title( $operator ),
+			'operator_slug' => (string) get_post_field( 'post_name', $operator_id ),
+			'routes'        => $hero_lead_routes,
 		),
 	) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 

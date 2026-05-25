@@ -86,21 +86,25 @@
     });
   }
 
-  function initModal() {
-    var modal = document.getElementById("mttf-modal");
-    if (!modal) return;
+  function initLeadCaptureForm(form, options) {
+    if (!form) return null;
 
-    var routeNameEl = modal.querySelector("[data-mttf-route-name]");
-    var titleEl = modal.querySelector("[data-mttf-title]");
-    var routeImageEl = modal.querySelector("[data-mttf-route-image]");
-    var form = modal.querySelector(".mttf-lead-form");
-    var statusEl = modal.querySelector("[data-mttf-status]");
-    var intlToggleBtn = modal.querySelector("[data-mttf-intl-toggle]");
-    var intlFields = modal.querySelector("[data-mttf-intl-fields]");
+    var config = options || {};
+    var statusEl = config.statusEl || form.querySelector("[data-mttf-status]");
+    var intlToggleBtn = config.intlToggleBtn || form.querySelector("[data-mttf-intl-toggle]");
+    var intlFields = config.intlFields || form.querySelector("[data-mttf-intl-fields]");
     var submitBtn = form.querySelector('button[type="submit"]');
     var submitDefaultText = submitBtn ? submitBtn.textContent : "Gửi";
+    var routeSelect = form.querySelector("[data-mttf-route-select]");
     var cooldownTimer = null;
-    var cooldownKey = "mttf_lead_cooldown_until";
+    var cooldownKey = config.cooldownKey || "mttf_lead_cooldown_until";
+
+    function setFieldValue(name, value) {
+      var field = form.querySelector('[name="' + name + '"]');
+      if (field) {
+        field.value = value || "";
+      }
+    }
 
     function getCooldownLeftSeconds() {
       var until = parseInt(safeStorageGet(cooldownKey) || "0", 10);
@@ -164,6 +168,180 @@
       }
     }
 
+    function syncSelectedRoute() {
+      if (!routeSelect) return;
+      var selectedOption = routeSelect.options[routeSelect.selectedIndex];
+      if (!selectedOption) return;
+
+      if (
+        selectedOption.dataset.routeId ||
+        selectedOption.dataset.routeTitle ||
+        selectedOption.dataset.routeSlug ||
+        selectedOption.dataset.routeRegion
+      ) {
+        setFieldValue("route_id", selectedOption.dataset.routeId || selectedOption.value || "");
+        setFieldValue("route_title", selectedOption.dataset.routeTitle || selectedOption.textContent || "");
+        setFieldValue("route_slug", selectedOption.dataset.routeSlug || "");
+        setFieldValue("route_region", selectedOption.dataset.routeRegion || "");
+      }
+
+      if (
+        selectedOption.dataset.operatorId ||
+        selectedOption.dataset.operatorName ||
+        selectedOption.dataset.operatorSlug
+      ) {
+        setFieldValue("operator_id", selectedOption.dataset.operatorId || "");
+        setFieldValue("operator_name", selectedOption.dataset.operatorName || selectedOption.textContent || "");
+        setFieldValue("operator_slug", selectedOption.dataset.operatorSlug || "");
+      }
+
+      if (typeof config.onRouteChange === "function") {
+        config.onRouteChange(selectedOption);
+      }
+    }
+
+    if (routeSelect) {
+      routeSelect.addEventListener("change", syncSelectedRoute);
+    }
+
+    if (intlToggleBtn) {
+      intlToggleBtn.addEventListener("click", function () {
+        var isOn = intlToggleBtn.getAttribute("aria-pressed") === "true";
+        setInternationalFieldsVisible(!isOn);
+      });
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      syncSelectedRoute();
+      if (getCooldownLeftSeconds() > 0) {
+        setStatus("Bạn đang trong thời gian chờ, vui lòng thử lại sau.", "error");
+        renderCooldown();
+        return;
+      }
+
+      if (!form.querySelector('[name="route_id"]') || !form.querySelector('[name="route_id"]').value) {
+        setStatus("Vui lòng chọn tuyến cần tư vấn.", "error");
+        return;
+      }
+
+      setStatus("Đang gửi...", "loading");
+      if (submitBtn) submitBtn.disabled = true;
+
+      var payload = new FormData(form);
+      payload.append("action", "mttf_capture_lead");
+      payload.append("nonce", (window.mttfData && window.mttfData.nonce) || "");
+      payload.append("source_page", window.location.href);
+      payload.append("first_touch", safeStorageGet("mttf_first_touch") || "");
+      payload.append("last_touch", safeStorageGet("mttf_last_touch") || "");
+
+      var params = getQueryParams();
+      Object.keys(params).forEach(function (key) {
+        payload.append(key, params[key]);
+      });
+
+      fetch((window.mttfData && window.mttfData.ajaxUrl) || "", {
+        method: "POST",
+        body: payload,
+      })
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (json) {
+          if (!json.success) {
+            setStatus((json.data && json.data.message) || "Gửi thất bại.", "error");
+            if (json.data && json.data.retry_after) {
+              setCooldown(json.data.retry_after);
+            } else if (submitBtn) {
+              submitBtn.disabled = false;
+            }
+            return;
+          }
+
+          setStatus(
+            "Chuyên viên của chúng tôi sẽ gọi lại cho bạn ngay. Vui lòng để chuông điện thoại!",
+            "success"
+          );
+          if (form.phone) {
+            form.phone.value = "";
+          }
+          var cooldownSeconds =
+            json &&
+            json.data &&
+            typeof json.data.cooldown_seconds !== "undefined"
+              ? parseInt(json.data.cooldown_seconds, 10)
+              : 45;
+          setCooldown(cooldownSeconds);
+
+          if (
+            typeof window.__mttfApplyActivityPing === "function" &&
+            json &&
+            json.data &&
+            json.data.activity_ping &&
+            json.data.activity_ping.message
+          ) {
+            window.__mttfApplyActivityPing(json.data.activity_ping);
+          }
+
+          var mMeas = window.mttfData && window.mttfData.measurement;
+          if (window.dataLayer && mMeas && parseInt(mMeas.enabled, 10) === 1) {
+            var evName =
+              (mMeas.eventName &&
+                String(mMeas.eventName).replace(/^\s+|\s+$/g, "")) ||
+              "mttf_lead_submit";
+            var routeIdField = form.querySelector('[name="route_id"]');
+            var routeSlugField = form.querySelector('[name="route_slug"]');
+            var basePayload = {
+              event: evName,
+              route_id: routeIdField ? routeIdField.value : "",
+              route_slug: routeSlugField ? routeSlugField.value : "",
+            };
+            window.dataLayer.push(basePayload);
+            if (parseInt(mMeas.duplicateGa4, 10) === 1) {
+              window.dataLayer.push({
+                event: "generate_lead",
+                route_id: basePayload.route_id,
+                route_slug: basePayload.route_slug,
+              });
+            }
+          }
+
+          if (typeof config.onSuccess === "function") {
+            config.onSuccess(json);
+          }
+        })
+        .catch(function () {
+          setStatus("Không thể gửi lúc này. Thử lại sau.", "error");
+          if (submitBtn) submitBtn.disabled = false;
+        });
+    });
+
+    syncSelectedRoute();
+    renderCooldown();
+    setInternationalFieldsVisible(false);
+    if (getCooldownLeftSeconds() > 0 && !cooldownTimer) {
+      cooldownTimer = setInterval(renderCooldown, 1000);
+    }
+
+    return {
+      setStatus: setStatus,
+      renderCooldown: renderCooldown,
+      setInternationalFieldsVisible: setInternationalFieldsVisible,
+      setCooldown: setCooldown,
+      syncSelectedRoute: syncSelectedRoute,
+    };
+  }
+
+  function initModal() {
+    var modal = document.getElementById("mttf-modal");
+    if (!modal) return;
+
+    var routeNameEl = modal.querySelector("[data-mttf-route-name]");
+    var titleEl = modal.querySelector("[data-mttf-title]");
+    var routeImageEl = modal.querySelector("[data-mttf-route-image]");
+    var form = modal.querySelector(".mttf-lead-form");
+    var formApi = initLeadCaptureForm(form);
+
     function openFromCard(card) {
       if (!card) return;
       var page = card.closest(".mttf-route-page");
@@ -186,9 +364,11 @@
         routeImageEl.src = card.dataset.routeImage || "";
         routeImageEl.alt = card.dataset.routeTitle || "Ảnh tuyến xe";
       }
-      setInternationalFieldsVisible(false);
-      setStatus("");
-      renderCooldown();
+      if (formApi) {
+        formApi.setInternationalFieldsVisible(false);
+        formApi.setStatus("");
+        formApi.renderCooldown();
+      }
       modal.hidden = false;
     }
 
@@ -247,110 +427,12 @@
         modal.hidden = true;
       });
     });
+  }
 
-    if (intlToggleBtn) {
-      intlToggleBtn.addEventListener("click", function () {
-        var isOn = intlToggleBtn.getAttribute("aria-pressed") === "true";
-        setInternationalFieldsVisible(!isOn);
-      });
-    }
-
-    form.addEventListener("submit", function (event) {
-      event.preventDefault();
-      if (getCooldownLeftSeconds() > 0) {
-        setStatus("Bạn đang trong thời gian chờ, vui lòng thử lại sau.", "error");
-        renderCooldown();
-        return;
-      }
-      setStatus("Đang gửi...", "loading");
-      if (submitBtn) submitBtn.disabled = true;
-
-      var payload = new FormData(form);
-      payload.append("action", "mttf_capture_lead");
-      payload.append("nonce", (window.mttfData && window.mttfData.nonce) || "");
-      payload.append("source_page", window.location.href);
-      payload.append("first_touch", safeStorageGet("mttf_first_touch") || "");
-      payload.append("last_touch", safeStorageGet("mttf_last_touch") || "");
-
-      var params = getQueryParams();
-      Object.keys(params).forEach(function (key) {
-        payload.append(key, params[key]);
-      });
-
-      fetch((window.mttfData && window.mttfData.ajaxUrl) || "", {
-        method: "POST",
-        body: payload,
-      })
-        .then(function (response) {
-          return response.json();
-        })
-        .then(function (json) {
-          if (!json.success) {
-            setStatus((json.data && json.data.message) || "Gửi thất bại.", "error");
-            if (json.data && json.data.retry_after) {
-              setCooldown(json.data.retry_after);
-            } else if (submitBtn) {
-              submitBtn.disabled = false;
-            }
-            return;
-          }
-          setStatus(
-            "Chuyên viên của chúng tôi sẽ gọi lại cho bạn ngay. Vui lòng để chuông điện thoại!",
-            "success"
-          );
-          form.phone.value = "";
-          var cooldownSeconds =
-            json &&
-            json.data &&
-            typeof json.data.cooldown_seconds !== "undefined"
-              ? parseInt(json.data.cooldown_seconds, 10)
-              : 45;
-          setCooldown(cooldownSeconds);
-          if (
-            typeof window.__mttfApplyActivityPing === "function" &&
-            json &&
-            json.data &&
-            json.data.activity_ping &&
-            json.data.activity_ping.message
-          ) {
-            window.__mttfApplyActivityPing(json.data.activity_ping);
-          }
-          var mMeas = window.mttfData && window.mttfData.measurement;
-          if (
-            window.dataLayer &&
-            mMeas &&
-            parseInt(mMeas.enabled, 10) === 1
-          ) {
-            var evName =
-              (mMeas.eventName &&
-                String(mMeas.eventName).replace(/^\s+|\s+$/g, "")) ||
-              "mttf_lead_submit";
-            var basePayload = {
-              event: evName,
-              route_id: form.route_id.value,
-              route_slug: form.route_slug.value,
-            };
-            window.dataLayer.push(basePayload);
-            if (parseInt(mMeas.duplicateGa4, 10) === 1) {
-              window.dataLayer.push({
-                event: "generate_lead",
-                route_id: basePayload.route_id,
-                route_slug: basePayload.route_slug,
-              });
-            }
-          }
-        })
-        .catch(function () {
-          setStatus("Không thể gửi lúc này. Thử lại sau.", "error");
-          if (submitBtn) submitBtn.disabled = false;
-        });
+  function initHeroLeadForms() {
+    document.querySelectorAll(".mttf-lead-form--hero").forEach(function (form) {
+      initLeadCaptureForm(form);
     });
-
-    renderCooldown();
-    setInternationalFieldsVisible(false);
-    if (getCooldownLeftSeconds() > 0 && !cooldownTimer) {
-      cooldownTimer = setInterval(renderCooldown, 1000);
-    }
   }
 
   function initLiveSearch() {
@@ -774,6 +856,41 @@
         currentIndex = (currentIndex + 1) % slides.length;
         slides[currentIndex].classList.add("is-active");
       }, intervalMs);
+    });
+  }
+
+  function initHeroDescriptionToggles() {
+    document.querySelectorAll("[data-mttf-hero-description]").forEach(function (row) {
+      var description = row.querySelector(".mttf-directory-hero__description");
+      var toggle = row.querySelector("[data-mttf-hero-description-toggle]");
+      if (!description || !toggle) return;
+
+      function syncToggleVisibility() {
+        var wasExpanded = row.classList.contains("is-expanded");
+        if (wasExpanded) {
+          row.classList.remove("is-expanded");
+        }
+
+        var isOverflowing = description.scrollWidth > description.clientWidth + 1;
+        toggle.hidden = !isOverflowing && !wasExpanded;
+
+        if (wasExpanded) {
+          row.classList.add("is-expanded");
+          toggle.hidden = false;
+        }
+      }
+
+      toggle.addEventListener("click", function () {
+        var isExpanded = row.classList.toggle("is-expanded");
+        toggle.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        toggle.textContent = isExpanded ? "Thu gọn" : "Đọc thêm";
+        if (!isExpanded) {
+          syncToggleVisibility();
+        }
+      });
+
+      syncToggleVisibility();
+      window.addEventListener("resize", syncToggleVisibility);
     });
   }
 
@@ -1311,7 +1428,9 @@
   function boot() {
     setTouchData();
     initModal();
+    initHeroLeadForms();
     initHeroSlides();
+    initHeroDescriptionToggles();
     initCardSliders();
     initDesktopAutoLoadCards();
     initLiveSearch();

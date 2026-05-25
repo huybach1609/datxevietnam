@@ -12,6 +12,25 @@ $route_price   = (int) get_post_meta( $route_id, '_mttf_price_from', true );
 $route_trip_frequency = (string) get_post_meta( $route_id, '_mttf_trip_frequency', true );
 $shared_contacts = $get_shared_contact_details();
 $related_routes = $get_related_routes( $route_id, 3 );
+$hero_lead_operators = array();
+
+foreach ( $operator_rows as $operator_row ) {
+	$hero_operator_id = (int) ( $operator_row['operator_id'] ?? 0 );
+	if ( $hero_operator_id <= 0 ) {
+		continue;
+	}
+
+	$hero_lead_operators[] = array(
+		'route_id'      => $route_id,
+		'route_title'   => (string) get_the_title( $route ),
+		'route_slug'    => $route_slug,
+		'region'        => $route_region,
+		'operator_id'   => $hero_operator_id,
+		'operator_name' => (string) ( $operator_row['operator_name'] ?? '' ),
+		'operator_slug' => (string) get_post_field( 'post_name', $hero_operator_id ),
+		'label'         => (string) ( $operator_row['operator_name'] ?? '' ),
+	);
+}
 ?>
 <div class="mttf mttf-directory mttf-route-page mttf-route-page--route-detail" data-page-type="route-detail">
 	<?php echo $render_directory_hero( array(
@@ -32,6 +51,17 @@ $related_routes = $get_related_routes( $route_id, 3 );
 			array( 'label' => 'Nhà xe', 'value' => (string) count( $operator_rows ) ),
 			array( 'label' => 'Khu vực', 'value' => $get_region_title_compact( $route_region ) ),
 			array( 'label' => 'Tần suất', 'value' => '' !== $route_trip_frequency ? $route_trip_frequency : 'Liên hệ tư vấn' ),
+		),
+		'lead_form'     => array(
+			'title'         => 'Tư vấn nhanh theo nhà xe',
+			'subtitle'      => 'Tuyến này có nhiều nhà xe khai thác. Chọn đúng nhà xe bạn muốn đi để đội ngũ gọi lại chính xác hơn.',
+			'select_label'  => 'Nhà xe cần tư vấn',
+			'page_type'     => 'route-detail',
+			'route_id'      => $route_id,
+			'route_title'   => (string) get_the_title( $route ),
+			'route_slug'    => $route_slug,
+			'route_region'  => $route_region,
+			'routes'        => $hero_lead_operators,
 		),
 	) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
