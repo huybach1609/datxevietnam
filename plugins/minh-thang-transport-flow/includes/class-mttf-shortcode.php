@@ -597,6 +597,7 @@ class MTTF_Shortcode {
 
 		foreach ( self::group_by_region( $routes, $route_priority ) as $region => $region_routes ) {
 			echo '<section class="mttf-hub mttf-operator-route-group" data-mttf-region="' . esc_attr( $region ) . '">';
+			echo '<h3 class="mttf-hub__title">Lộ trình phổ biến</h3>';
 			echo '<div class="mttf-hub__track mttf-operator-route-grid">';
 
 			foreach ( $region_routes as $route ) {
@@ -894,6 +895,7 @@ class MTTF_Shortcode {
 
 		ob_start();
 		?>
+		<?php echo '<h3 class="mttf-hub__title">Lộ trình phổ biến</h3>'; ?>
 		<div class="mttf-route-operator-grid">
 			<?php foreach ( $operator_rows as $row ) : ?>
 				<?php
