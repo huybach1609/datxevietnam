@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 	<div class="mttf-operator-route-card__body">
 		<div class="mttf-operator-route-card__brand-row">
-			<span class="mttf-operator-route-card__brand-label">Nhà xe đang xem</span>
+			<!-- <span class="mttf-operator-route-card__brand-label">Nhà xe đang xem</span> -->
 		</div>
 		<h3 class="mttf-card__title"><?php echo esc_html( $title ); ?></h3>
 		<?php if ( '' !== $rating_score && '' !== $review_count ) : ?>
@@ -22,9 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<?php endif; ?>
 		<div class="mttf-card__meta mttf-card__meta--primary">
 			<span class="mttf-card__price">Từ <?php echo esc_html( number_format_i18n( $price_from ) ); ?> VND</span>
-			<?php if ( $operator_count > 0 ) : ?>
+			<!-- <?php if ( $operator_count > 0 ) : ?>
 				<span class="mttf-card__contact-count"><?php echo esc_html( (string) $operator_count ); ?> nhà xe</span>
-			<?php endif; ?>
+			<?php endif; ?> -->
 		</div>
 		<div class="mttf-card__meta">
 			<?php if ( '' !== $car_type ) : ?>
@@ -33,13 +33,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php if ( '' !== $trip_frequency ) : ?>
 				<span><?php echo esc_html( $trip_frequency ); ?></span>
 			<?php endif; ?>
-			<?php if ( '' !== $region_label ) : ?>
+			<!-- <?php if ( '' !== $region_label ) : ?>
 				<span><?php echo esc_html( $region_label ); ?></span>
-			<?php endif; ?>
+			<?php endif; ?> -->
+			</div>
+			<div class="mttf-card__actions mttf-operator-route-card__actions">
+				<button type="button" class="mttf-btn mttf-btn--call mttf-open-modal mttf-js-track" data-track-event="book_click" data-track-label="operator_card_consult">Tư vấn</button>
+				<?php if ( ! empty( $zalo_url ) ) : ?>
+					<a class="mttf-btn mttf-btn--zalo mttf-js-track" href="<?php echo esc_url( $zalo_url ); ?>" target="_blank" rel="noopener" data-track-event="zalo_click" data-track-label="operator_card_zalo">
+						<img class="mttf-btn__icon" src="<?php echo esc_url( MTTF_URL . 'assets/icons/icons8-zalo.svg' ); ?>" alt="" aria-hidden="true" loading="lazy" />
+						<span>Chat Zalo</span>
+					</a>
+				<?php else : ?>
+					<a class="mttf-btn mttf-js-track" href="<?php echo esc_url( $detail_url ); ?>" data-track-event="view_route_click" data-track-label="operator_card_view_route">Xem tuyến này</a>
+				<?php endif; ?>
+			</div>
 		</div>
-		<div class="mttf-card__actions mttf-operator-route-card__actions">
-			<a class="mttf-btn mttf-js-track" href="<?php echo esc_url( $detail_url ); ?>" data-track-event="view_route_click" data-track-label="operator_card_view_route">Xem tuyến này</a>
-			<button type="button" class="mttf-btn mttf-btn--call mttf-open-modal mttf-js-track" data-track-event="book_click" data-track-label="operator_card_consult">Tư vấn</button>
-		</div>
-	</div>
-</article>
+	</article>

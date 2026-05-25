@@ -9,10 +9,81 @@ $route_region  = (string) get_post_meta( $route_id, '_mttf_hub_region', true );
 $route_images  = $get_route_hero_images( $route_id, 'large' );
 $route_image   = ! empty( $route_images ) ? (string) $route_images[0] : '';
 $route_price   = (int) get_post_meta( $route_id, '_mttf_price_from', true );
+$route_car_type = (string) get_post_meta( $route_id, '_mttf_car_type', true );
 $route_trip_frequency = (string) get_post_meta( $route_id, '_mttf_trip_frequency', true );
+$route_feature_keys = array_slice( (array) get_post_meta( $route_id, '_mttf_route_features', true ), 0, 4 );
 $shared_contacts = $get_shared_contact_details();
 $related_routes = $get_related_routes( $route_id, 3 );
 $hero_lead_operators = array();
+$route_feature_labels = array(
+	'don_tra_tan_noi'             => 'Đón trả tận nơi',
+	'don_tra_linh_hoat'           => 'Đón trả linh hoạt',
+	'mien_phi_nuoc_loc_khan_lanh' => 'Miễn phí nước lọc & khăn lạnh',
+	'ghe_massage_boc_da_cao_cap'  => 'Ghế massage bọc da cao cấp',
+	'cabin_rieng_tu'              => 'Cabin riêng tư',
+	'wifi_cong_sac_usb'           => 'Wifi tốc độ cao, cổng sạc USB & Type C',
+	'chan_goi_sach_se'            => 'Chăn gối sạch sẽ',
+	'chay_cao_toc_100'            => 'Chạy cao tốc 100%',
+	'khong_bat_khach_doc_duong'   => 'Không bắt khách dọc đường',
+	'xe_doi_moi_2025_2026'        => 'Xe đời mới 2025 - 2026',
+	'dung_gio_dung_chuyen'        => 'Đúng giờ - đúng chuyến',
+	'bao_hiem_hanh_khach'         => 'Bảo hiểm hành khách',
+);
+$route_feature_values = array();
+$route_price_text = $route_price > 0 ? number_format_i18n( $route_price ) . ' VND' : 'Đang cập nhật';
+$route_operator_count = count( $operator_rows );
+
+foreach ( $route_feature_keys as $feature_key ) {
+	if ( isset( $route_feature_labels[ $feature_key ] ) ) {
+		$route_feature_values[] = $route_feature_labels[ $feature_key ];
+	}
+}
+
+$route_title = (string) get_the_title( $route );
+$hero_eyebrow = '' !== $route_car_type ? $route_car_type : 'Tuyến xe đang mở bán';
+$hero_title = 0 === stripos( $route_title, 'Đặt Vé ' ) ? $route_title : 'Đặt Vé ' . $route_title;
+$hero_description_parts = array();
+
+if ( $route_price > 0 ) {
+	$hero_description_parts[] = 'Giá từ ' . number_format_i18n( $route_price ) . ' VND';
+}
+
+if ( ! empty( $route_feature_values ) ) {
+	$hero_description_parts[] = implode( ', ', array_slice( $route_feature_values, 0, 2 ) );
+}
+
+// if ( $route_operator_count > 0 ) {
+// 	$hero_description_parts[] = $route_operator_count . ' nhà xe khai thác';
+// }
+
+$hero_description = ! empty( $hero_description_parts )
+	? implode( ', ', $hero_description_parts ) . '.'
+	: 'Nhiều nhà xe khai thác, hỗ trợ giữ chỗ nhanh qua điện thoại hoặc Zalo.';
+
+$hero_summary_items = array(
+	array( 'label' => 'Giá từ', 'value' => $route_price_text ),
+);
+
+foreach ( $route_feature_values as $feature_value ) {
+	$hero_summary_items[] = array(
+		'label' => '',
+		'value' => $feature_value,
+	);
+}
+
+if ( count( $route_feature_values ) < 2 && '' !== $route_car_type ) {
+	$hero_summary_items[] = array(
+		'label' => '',
+		'value' => $route_car_type,
+	);
+}
+
+if ( count( $route_feature_values ) < 3 && '' !== $route_trip_frequency ) {
+	$hero_summary_items[] = array(
+		'label' => '',
+		'value' => $route_trip_frequency,
+	);
+}
 
 foreach ( $operator_rows as $operator_row ) {
 	$hero_operator_id = (int) ( $operator_row['operator_id'] ?? 0 );
@@ -34,9 +105,9 @@ foreach ( $operator_rows as $operator_row ) {
 ?>
 <div class="mttf mttf-directory mttf-route-page mttf-route-page--route-detail" data-page-type="route-detail">
 	<?php echo $render_directory_hero( array(
-		'eyebrow'       => 'Tuyến đang xem',
-		'title'         => get_the_title( $route ),
-		'description'   => 'Xem tất cả nhà xe đang khai thác tuyến này, so sánh nhanh và kết nối tư vấn giữ chỗ trong vài phút.',
+		'eyebrow'       => $hero_eyebrow,
+		'title'         => $hero_title,
+		'description'   => $hero_description,
 		'base_url'      => $base_url,
 		'back_url'      => $base_url,
 		'back_label'    => 'Tất cả tuyến',
@@ -46,15 +117,10 @@ foreach ( $operator_rows as $operator_row ) {
 		'phone_href'    => $shared_contacts['phone_href'],
 		'zalo_url'      => $shared_contacts['zalo_url'],
 		'email'         => $shared_contacts['email'],
-		'summary_items' => array(
-			array( 'label' => 'Giá từ', 'value' => $route_price > 0 ? number_format_i18n( $route_price ) . ' VND' : 'Đang cập nhật' ),
-			array( 'label' => 'Nhà xe', 'value' => (string) count( $operator_rows ) ),
-			array( 'label' => 'Khu vực', 'value' => $get_region_title_compact( $route_region ) ),
-			array( 'label' => 'Tần suất', 'value' => '' !== $route_trip_frequency ? $route_trip_frequency : 'Liên hệ tư vấn' ),
-		),
+		'summary_items' => $hero_summary_items,
 		'lead_form'     => array(
-			'title'         => 'Tư vấn nhanh theo nhà xe',
-			'subtitle'      => 'Tuyến này có nhiều nhà xe khai thác. Chọn đúng nhà xe bạn muốn đi để đội ngũ gọi lại chính xác hơn.',
+			'title'         => 'Chọn lựa phù hợp, đội ngũ hỗ trợ ngay',
+			'subtitle'      => 'Chọn phương án bạn đang quan tâm, để lại số điện thoại và đội ngũ sẽ liên hệ lại trong ít phút.',
 			'select_label'  => 'Nhà xe cần tư vấn',
 			'page_type'     => 'route-detail',
 			'route_id'      => $route_id,

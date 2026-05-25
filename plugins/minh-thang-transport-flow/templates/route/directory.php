@@ -24,7 +24,7 @@ $directory_hero_image = (string) MTTF_Settings::get( 'hero_background_url', 'htt
 		),
 	) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 
-	<form method="get" class="mttf-search mttf-search--directory" action="" autocomplete="off">
+	<!-- <form method="get" class="mttf-search mttf-search--directory" action="" autocomplete="off">
 		<div class="mttf-search__input-wrap">
 			<span class="mttf-search__icon" aria-hidden="true"><?php echo file_get_contents( MTTF_PATH . 'assets/icons/search.svg' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 			<input id="mttf-search-input" type="text" name="mttf_q" value="<?php echo esc_attr( $search_keyword ); ?>" placeholder="Tìm tuyến hoặc điểm đến" />
@@ -32,7 +32,7 @@ $directory_hero_image = (string) MTTF_Settings::get( 'hero_background_url', 'htt
 		<div class="mttf-suggest" hidden>
 			<ul class="mttf-suggest__list" role="listbox" aria-label="Gợi ý tuyến"></ul>
 		</div>
-	</form>
+	</form> -->
 
 	<div class="mttf-filters-panel">
 		<div class="mttf-filters-group mttf-quick-filters" role="group" aria-label="Lọc nhanh theo miền">

@@ -769,16 +769,18 @@ class MTTF_Shortcode {
 		return self::render_route_partial( 'route-discovery-card', $data );
 	}
 
-	private static function render_operator_route_card( $route, $base_url, $operator = null ) {
-		$data = self::get_route_card_data( $route );
-		$data['detail_url'] = self::build_route_directory_url( $base_url, $route );
-		$data['region_label'] = self::get_region_title_compact( $data['region'] );
-		$data['operator_id'] = $operator ? (int) $operator->ID : 0;
-		$data['operator_name'] = $operator ? (string) get_the_title( $operator ) : '';
-		$data['operator_slug'] = $operator ? (string) get_post_field( 'post_name', $operator->ID ) : '';
+		private static function render_operator_route_card( $route, $base_url, $operator = null ) {
+			$data = self::get_route_card_data( $route );
+			$shared_contacts = self::get_shared_contact_details();
+			$data['detail_url'] = self::build_route_directory_url( $base_url, $route );
+			$data['region_label'] = self::get_region_title_compact( $data['region'] );
+			$data['operator_id'] = $operator ? (int) $operator->ID : 0;
+			$data['operator_name'] = $operator ? (string) get_the_title( $operator ) : '';
+			$data['operator_slug'] = $operator ? (string) get_post_field( 'post_name', $operator->ID ) : '';
+			$data['zalo_url'] = (string) ( $shared_contacts['zalo_url'] ?? '' );
 
-		return self::render_route_partial( 'operator-route-card', $data );
-	}
+			return self::render_route_partial( 'operator-route-card', $data );
+		}
 
 	private static function get_related_routes( $route_id, $limit = 3 ) {
 		$route_id = absint( $route_id );

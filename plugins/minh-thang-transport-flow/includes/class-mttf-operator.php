@@ -11,6 +11,7 @@ class MTTF_Operator {
 	const META_PRIORITY        = '_mttf_operator_priority';
 	const META_IS_ACTIVE       = '_mttf_operator_is_active';
 	const META_SUMMARY         = '_mttf_operator_summary';
+	const META_HIGHLIGHTS      = '_mttf_operator_highlights';
 
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
@@ -93,15 +94,22 @@ class MTTF_Operator {
 		?>
 		<table class="form-table" role="presentation">
 			<tbody>
-			<tr>
-				<th><label for="mttf_operator_summary">Mô tả ngắn</label></th>
-				<td>
-					<textarea name="mttf_operator_summary" id="mttf_operator_summary" rows="3" class="large-text"><?php echo esc_textarea( $values['summary'] ); ?></textarea>
-				</td>
-			</tr>
-			<tr>
-				<th><label for="mttf_operator_region">Khu vực hoạt động</label></th>
-				<td>
+				<tr>
+					<th><label for="mttf_operator_summary">Mô tả ngắn</label></th>
+					<td>
+						<textarea name="mttf_operator_summary" id="mttf_operator_summary" rows="3" class="large-text"><?php echo esc_textarea( $values['summary'] ); ?></textarea>
+					</td>
+				</tr>
+				<tr>
+					<th><label for="mttf_operator_highlights">Điểm nổi bật hero</label></th>
+					<td>
+						<textarea name="mttf_operator_highlights" id="mttf_operator_highlights" rows="4" class="large-text" placeholder="Mỗi dòng một chip, ví dụ:&#10;Cabin riêng tư&#10;Đón trả linh hoạt&#10;Wifi tốc độ cao"><?php echo esc_textarea( $values['highlights'] ); ?></textarea>
+						<p class="description">Dùng cho chip ngắn trong hero trang nhà xe. Mỗi dòng sẽ hiển thị thành một chip riêng.</p>
+					</td>
+				</tr>
+				<tr>
+					<th><label for="mttf_operator_region">Khu vực hoạt động</label></th>
+					<td>
 					<select name="mttf_operator_region" id="mttf_operator_region">
 						<option value="" <?php selected( $values['region'], '' ); ?>>Tất cả</option>
 						<option value="bac" <?php selected( $values['region'], 'bac' ); ?>>Bắc</option>
@@ -163,9 +171,10 @@ class MTTF_Operator {
 			return;
 		}
 
-		update_post_meta( $post_id, self::META_SUMMARY, sanitize_textarea_field( wp_unslash( $_POST['mttf_operator_summary'] ?? '' ) ) );
-		update_post_meta( $post_id, self::META_REGION, self::sanitize_region( wp_unslash( $_POST['mttf_operator_region'] ?? '' ) ) );
-		update_post_meta( $post_id, self::META_GALLERY_IDS, self::sanitize_gallery_ids( wp_unslash( $_POST['mttf_operator_gallery_ids'] ?? '' ) ) );
+			update_post_meta( $post_id, self::META_SUMMARY, sanitize_textarea_field( wp_unslash( $_POST['mttf_operator_summary'] ?? '' ) ) );
+			update_post_meta( $post_id, self::META_HIGHLIGHTS, self::sanitize_highlights_field( wp_unslash( $_POST['mttf_operator_highlights'] ?? '' ) ) );
+			update_post_meta( $post_id, self::META_REGION, self::sanitize_region( wp_unslash( $_POST['mttf_operator_region'] ?? '' ) ) );
+			update_post_meta( $post_id, self::META_GALLERY_IDS, self::sanitize_gallery_ids( wp_unslash( $_POST['mttf_operator_gallery_ids'] ?? '' ) ) );
 		update_post_meta( $post_id, self::META_LEAD_EMAIL, self::sanitize_lead_emails_field( wp_unslash( $_POST['mttf_operator_lead_email'] ?? '' ) ) );
 		update_post_meta( $post_id, self::META_TELEGRAM_CHAT_ID, sanitize_text_field( wp_unslash( $_POST['mttf_operator_telegram_chat_id'] ?? '' ) ) );
 		update_post_meta( $post_id, self::META_PRIORITY, absint( $_POST['mttf_operator_priority'] ?? 0 ) );
@@ -217,11 +226,12 @@ class MTTF_Operator {
 	}
 
 	public static function get_values( $post_id ) {
-		return array(
-			'summary'          => (string) get_post_meta( $post_id, self::META_SUMMARY, true ),
-			'region'           => (string) get_post_meta( $post_id, self::META_REGION, true ),
-			'gallery_ids'      => (string) get_post_meta( $post_id, self::META_GALLERY_IDS, true ),
-			'lead_email'       => (string) get_post_meta( $post_id, self::META_LEAD_EMAIL, true ),
+			return array(
+				'summary'          => (string) get_post_meta( $post_id, self::META_SUMMARY, true ),
+				'highlights'       => (string) get_post_meta( $post_id, self::META_HIGHLIGHTS, true ),
+				'region'           => (string) get_post_meta( $post_id, self::META_REGION, true ),
+				'gallery_ids'      => (string) get_post_meta( $post_id, self::META_GALLERY_IDS, true ),
+				'lead_email'       => (string) get_post_meta( $post_id, self::META_LEAD_EMAIL, true ),
 			'telegram_chat_id' => (string) get_post_meta( $post_id, self::META_TELEGRAM_CHAT_ID, true ),
 			'priority'         => (int) get_post_meta( $post_id, self::META_PRIORITY, true ),
 			'is_active'        => (int) get_post_meta( $post_id, self::META_IS_ACTIVE, true ),
@@ -281,18 +291,19 @@ class MTTF_Operator {
 
 		$values = self::get_values( $operator_id );
 
-		return array(
-			'operator_id'       => $operator_id,
-			'operator_name'     => get_the_title( $operator_id ),
+			return array(
+				'operator_id'       => $operator_id,
+				'operator_name'     => get_the_title( $operator_id ),
 			'gallery_ids'       => $values['gallery_ids'],
 			'lead_email'        => $values['lead_email'],
 			'telegram_chat_id'  => $values['telegram_chat_id'],
 			'priority'          => $values['priority'],
-			'is_active'         => $values['is_active'],
-			'region'            => $values['region'],
-			'summary'           => $values['summary'],
-		);
-	}
+				'is_active'         => $values['is_active'],
+				'region'            => $values['region'],
+				'summary'           => $values['summary'],
+				'highlights'        => self::parse_highlights_lines( $values['highlights'] ),
+			);
+		}
 
 	public static function get_gallery_image_urls( $operator_id, $size = 'large' ) {
 		$values = self::get_values( $operator_id );
@@ -349,6 +360,24 @@ class MTTF_Operator {
 		}
 
 		return ! empty( $clean ) ? implode( ',', array_unique( $clean ) ) : '';
+	}
+
+	private static function sanitize_highlights_field( $raw ) {
+		$lines = self::parse_highlights_lines( $raw );
+		return implode( "\n", $lines );
+	}
+
+	private static function parse_highlights_lines( $raw ) {
+		$lines = preg_split( '/\r\n|\r|\n/', (string) $raw );
+		$lines = is_array( $lines ) ? $lines : array();
+		$lines = array_map(
+			static function ( $line ) {
+				return sanitize_text_field( trim( (string) $line ) );
+			},
+			$lines
+		);
+		$lines = array_values( array_unique( array_filter( $lines ) ) );
+		return array_slice( $lines, 0, 6 );
 	}
 
 	private static function parse_gallery_ids( $raw_ids ) {

@@ -894,6 +894,154 @@
     });
   }
 
+  function initRoutePageMotion() {
+    if (
+      !("animate" in Element.prototype) ||
+      (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+    ) {
+      return;
+    }
+
+    var pageRoots = Array.prototype.slice.call(
+      document.querySelectorAll(".mttf-route-page--route-detail, .mttf-route-page--operator-detail")
+    );
+    if (!pageRoots.length) return;
+
+    var enterEase = "cubic-bezier(0.16, 1, 0.3, 1)";
+    var softEase = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+    pageRoots.forEach(function (pageRoot) {
+      var hero = pageRoot.querySelector(".mttf-directory-hero");
+      if (hero && !hero.dataset.motionPlayed) {
+        hero.dataset.motionPlayed = "true";
+
+        var overlay = hero.querySelector(".mttf-directory-hero__overlay");
+        var media = hero.querySelector(".mttf-directory-hero__media");
+        var leadCard = hero.querySelector(".mttf-directory-hero__lead-card");
+        var motionTargets = [
+          { selector: ".mttf-directory-hero__brand", y: -8, delay: 40, duration: 300 },
+          { selector: ".mttf-directory-hero__eyebrow", y: 10, delay: 90, duration: 280 },
+          { selector: ".mttf-directory-hero__title", y: 18, delay: 130, duration: 420 },
+          { selector: ".mttf-directory-hero__description-row", y: 14, delay: 190, duration: 340 },
+          { selector: ".mttf-directory-hero__summary", y: 16, delay: 230, duration: 340 },
+          { selector: ".mttf-directory-hero__actions", y: 18, delay: 270, duration: 320 },
+        ];
+
+        if (media) {
+          media.animate(
+            [
+              { opacity: 0.01, transform: "scale(1.035)" },
+              { opacity: 1, transform: "scale(1)" },
+            ],
+            {
+              duration: 560,
+              easing: enterEase,
+              fill: "both",
+            }
+          );
+        }
+
+        if (overlay) {
+          overlay.animate(
+            [
+              { opacity: 0.01 },
+              { opacity: 1 },
+            ],
+            {
+              duration: 280,
+              easing: softEase,
+              fill: "both",
+            }
+          );
+        }
+
+        motionTargets.forEach(function (item) {
+          var el = hero.querySelector(item.selector);
+          if (!el) return;
+
+          el.animate(
+            [
+              { opacity: 0.01, transform: "translate3d(0, " + item.y + "px, 0)" },
+              { opacity: 1, transform: "translate3d(0, 0, 0)" },
+            ],
+            {
+              duration: item.duration,
+              delay: item.delay,
+              easing: enterEase,
+              fill: "both",
+            }
+          );
+        });
+
+        if (leadCard) {
+          leadCard.animate(
+            [
+              { opacity: 0.01, transform: "translate3d(0, 24px, 0) scale(0.985)" },
+              { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
+            ],
+            {
+              duration: 420,
+              delay: 220,
+              easing: enterEase,
+              fill: "both",
+            }
+          );
+        }
+
+        hero.classList.add("is-motion-live");
+      }
+
+      var revealCards = Array.prototype.slice.call(pageRoot.querySelectorAll(".mttf-card"));
+      if (!revealCards.length || !("IntersectionObserver" in window)) {
+        return;
+      }
+
+      var revealObserver = new IntersectionObserver(
+        function (entries, observer) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+
+            var card = entry.target;
+            if (card.dataset.motionRevealed === "true") {
+              observer.unobserve(card);
+              return;
+            }
+
+            card.dataset.motionRevealed = "true";
+            var cardIndex = parseInt(card.dataset.routePosition || "0", 10) || 0;
+            var delay = Math.min((cardIndex % 4) * 55, 165);
+
+            card.animate(
+              [
+                { opacity: 0.01, transform: "translate3d(0, 22px, 0) scale(0.985)" },
+                { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
+              ],
+              {
+                duration: 360,
+                delay: delay,
+                easing: enterEase,
+                fill: "both",
+              }
+            );
+
+            observer.unobserve(card);
+          });
+        },
+        {
+          root: null,
+          rootMargin: "0px 0px -10% 0px",
+          threshold: 0.16,
+        }
+      );
+
+      revealCards.forEach(function (card) {
+        if (card.dataset.motionObserved === "true") return;
+        card.dataset.motionObserved = "true";
+        revealObserver.observe(card);
+      });
+    });
+  }
+
   function initDesktopAutoLoadCards() {
     if (window.innerWidth < 1024) {
       return;
@@ -1431,6 +1579,7 @@
     initHeroLeadForms();
     initHeroSlides();
     initHeroDescriptionToggles();
+    initRoutePageMotion();
     initCardSliders();
     initDesktopAutoLoadCards();
     initLiveSearch();

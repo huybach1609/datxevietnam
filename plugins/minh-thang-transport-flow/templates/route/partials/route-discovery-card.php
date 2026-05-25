@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</a>
 	<div class="mttf-route-discovery-card__body">
 		<div class="mttf-route-discovery-card__top">
-			<span class="mttf-route-discovery-card__region"><?php echo esc_html( $region_label ); ?></span>
+			<!-- <span class="mttf-route-discovery-card__region"><?php echo esc_html( $region_label ); ?></span> -->
 			<?php if ( $operator_count > 0 ) : ?>
 				<span class="mttf-route-discovery-card__count"><?php echo esc_html( (string) $operator_count ); ?> nhà xe</span>
 			<?php endif; ?>
@@ -19,9 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<h4 class="mttf-card__title"><?php echo esc_html( $title ); ?></h4>
 		<div class="mttf-card__meta mttf-card__meta--primary mttf-route-discovery-card__meta mttf-route-discovery-card__meta--primary">
 			<span class="mttf-card__price">Từ <?php echo esc_html( number_format_i18n( $price_from ) ); ?> VND</span>
-			<?php if ( $operator_count > 0 ) : ?>
+			<!-- <?php if ( $operator_count > 0 ) : ?>
 				<span class="mttf-card__contact-count"><?php echo esc_html( (string) $operator_count ); ?> nhà xe</span>
-			<?php endif; ?>
+			<?php endif; ?> -->
 		</div>
 		<div class="mttf-card__meta mttf-route-discovery-card__meta">
 			<?php if ( '' !== $car_type ) : ?>

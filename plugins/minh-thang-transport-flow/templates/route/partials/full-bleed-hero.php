@@ -12,6 +12,11 @@ $hero_images = isset( $image_urls ) && is_array( $image_urls ) ? array_values( a
 if ( empty( $hero_images ) && '' !== $image_url ) {
 	$hero_images[] = $image_url;
 }
+$hero_logo_url = isset( $logo_url ) ? (string) $logo_url : '';
+$hero_logo_alt = isset( $logo_alt ) ? (string) $logo_alt : $title;
+if ( '' !== $hero_logo_url ) {
+	$classes .= ' mttf-directory-hero--has-brand';
+}
 
 $lead_form = isset( $lead_form ) && is_array( $lead_form ) ? $lead_form : array();
 $lead_form_routes = isset( $lead_form['routes'] ) && is_array( $lead_form['routes'] ) ? array_values( array_filter( $lead_form['routes'] ) ) : array();
@@ -36,22 +41,48 @@ if ( ! empty( $lead_form_routes ) ) {
 		</div>
 	<?php endif; ?>
 	<div class="mttf-directory-hero__overlay"></div>
-	<div class="mttf-directory-hero__inner">
-		<div class="mttf-directory-hero__body">
-			<?php if ( '' !== $eyebrow ) : ?>
-				<p class="mttf-directory-hero__eyebrow"><?php echo esc_html( $eyebrow ); ?></p>
-			<?php endif; ?>
-			<h1 class="mttf-directory-hero__title"><?php echo esc_html( $title ); ?></h1>
-			<?php if ( '' !== $description ) : ?>
-				<div class="mttf-directory-hero__description-row" data-mttf-hero-description>
-					<p class="mttf-directory-hero__description"><?php echo esc_html( $description ); ?></p>
-					<button class="mttf-directory-hero__description-toggle" type="button" aria-expanded="false" data-mttf-hero-description-toggle>Đọc thêm</button>
-				</div>
-			<?php endif; ?>
-			<div class="mttf-directory-hero__actions">
-				<?php if ( '' !== $phone_href && '' !== $phone ) : ?>
-					<a class="mttf-directory-hero__cta mttf-directory-hero__cta--call mttf-js-track" href="<?php echo esc_url( $phone_href ); ?>" data-track-event="call_click" data-track-label="hero_call">Gọi <?php echo esc_html( $phone ); ?></a>
+		<div class="mttf-directory-hero__inner">
+			<div class="mttf-directory-hero__body">
+				<?php if ( '' !== $hero_logo_url ) : ?>
+					<div class="mttf-directory-hero__brand">
+						<img class="mttf-directory-hero__brand-logo" src="<?php echo esc_url( $hero_logo_url ); ?>" alt="<?php echo esc_attr( $hero_logo_alt ); ?>" loading="lazy" />
+					</div>
 				<?php endif; ?>
+				<?php if ( '' !== $eyebrow ) : ?>
+					<p class="mttf-directory-hero__eyebrow"><?php echo esc_html( $eyebrow ); ?></p>
+				<?php endif; ?>
+			<h1 class="mttf-directory-hero__title"><?php echo esc_html( $title ); ?></h1>
+				<?php if ( '' !== $description ) : ?>
+					<div class="mttf-directory-hero__description-row" data-mttf-hero-description>
+						<p class="mttf-directory-hero__description"><?php echo esc_html( $description ); ?></p>
+						<button class="mttf-directory-hero__description-toggle" type="button" aria-expanded="false" data-mttf-hero-description-toggle>Đọc thêm</button>
+					</div>
+				<?php endif; ?>
+				<?php if ( ! empty( $summary_items ) ) : ?>
+					<div class="mttf-directory-hero__summary">
+						<?php foreach ( $summary_items as $item ) : ?>
+							<?php
+							$item_label = (string) ( $item['label'] ?? '' );
+							$item_classes = 'mttf-directory-hero__summary-item';
+							if ( 'Giá từ' === $item_label ) {
+								$item_classes .= ' mttf-directory-hero__summary-item--price';
+							} elseif ( '' === $item_label ) {
+								$item_classes .= ' mttf-directory-hero__summary-item--feature';
+							}
+							?>
+							<div class="<?php echo esc_attr( $item_classes ); ?>">
+								<?php if ( '' !== $item_label ) : ?>
+									<span class="mttf-directory-hero__summary-label"><?php echo esc_html( $item_label ); ?></span>
+								<?php endif; ?>
+								<strong class="mttf-directory-hero__summary-value"><?php echo esc_html( (string) $item['value'] ); ?></strong>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
+				<div class="mttf-directory-hero__actions">
+					<?php if ( '' !== $phone_href && '' !== $phone ) : ?>
+						<a class="mttf-directory-hero__cta mttf-directory-hero__cta--call mttf-js-track" href="<?php echo esc_url( $phone_href ); ?>" data-track-event="call_click" data-track-label="hero_call">Gọi <?php echo esc_html( $phone ); ?></a>
+					<?php endif; ?>
 				<?php if ( '' !== $zalo_url ) : ?>
 					<a class="mttf-directory-hero__cta mttf-directory-hero__cta--zalo mttf-js-track" href="<?php echo esc_url( $zalo_url ); ?>" target="_blank" rel="noopener" data-track-event="zalo_click" data-track-label="hero_zalo">Chat Zalo</a>
 				<?php endif; ?>
@@ -59,18 +90,8 @@ if ( ! empty( $lead_form_routes ) ) {
 				<?php if ( '' !== $back_url && '' !== $back_label ) : ?>
 					<a class="mttf-directory-hero__secondary-link mttf-js-track" href="<?php echo esc_url( $back_url ); ?>" data-track-event="view_route_click" data-track-label="hero_back_link"><?php echo esc_html( $back_label ); ?></a>
 				<?php endif; ?> -->
-			</div>
-			<?php if ( ! empty( $summary_items ) ) : ?>
-				<div class="mttf-directory-hero__summary">
-					<?php foreach ( $summary_items as $item ) : ?>
-						<div class="mttf-directory-hero__summary-item">
-							<span class="mttf-directory-hero__summary-label"><?php echo esc_html( (string) $item['label'] ); ?></span>
-							<strong class="mttf-directory-hero__summary-value"><?php echo esc_html( (string) $item['value'] ); ?></strong>
-						</div>
-					<?php endforeach; ?>
 				</div>
-			<?php endif; ?>
-		</div>
+			</div>
 		<?php if ( ! empty( $lead_form_routes ) ) : ?>
 			<div class="mttf-directory-hero__lead">
 				<div class="mttf-directory-hero__lead-card">
