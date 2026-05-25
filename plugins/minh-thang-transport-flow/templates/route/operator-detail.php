@@ -10,6 +10,19 @@ $operator_gallery = class_exists( 'MTTF_Operator' ) ? MTTF_Operator::get_gallery
 $operator_featured = get_the_post_thumbnail_url( $operator_id, 'large' );
 $operator_logo = get_the_post_thumbnail_url( $operator_id, 'medium' );
 $operator_images = array_values( array_unique( array_filter( array_merge( $operator_gallery, array( $operator_featured ? (string) $operator_featured : '' ) ) ) ) );
+
+if ( empty( $operator_images ) && ! empty( $routes ) ) {
+	foreach ( $routes as $fallback_route ) {
+		$fallback_route_images = $get_route_hero_images( (int) $fallback_route->ID, 'large' );
+		if ( empty( $fallback_route_images ) ) {
+			continue;
+		}
+
+		$operator_images = $fallback_route_images;
+		break;
+	}
+}
+
 $operator_image  = ! empty( $operator_images ) ? (string) $operator_images[0] : '';
 $shared_contacts = $get_shared_contact_details();
 $hero_lead_routes = array();
