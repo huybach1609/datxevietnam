@@ -19,6 +19,10 @@ if ( '' !== $hero_logo_url ) {
 }
 
 $lead_form = isset( $lead_form ) && is_array( $lead_form ) ? $lead_form : array();
+$cta_link_label = isset( $cta_link_label ) ? (string) $cta_link_label : '';
+$cta_link_url = isset( $cta_link_url ) ? (string) $cta_link_url : '';
+$phone_label = isset( $phone_label ) ? (string) $phone_label : '';
+$show_lead_route_context = ! isset( $lead_form['show_route_context'] ) || ! empty( $lead_form['show_route_context'] );
 $lead_form_routes = isset( $lead_form['routes'] ) && is_array( $lead_form['routes'] ) ? array_values( array_filter( $lead_form['routes'] ) ) : array();
 $default_lead_item = ! empty( $lead_form_routes ) ? $lead_form_routes[0] : array();
 $lead_route_id = (string) ( $lead_form['route_id'] ?? $default_lead_item['route_id'] ?? '' );
@@ -28,6 +32,15 @@ $lead_route_region = (string) ( $lead_form['route_region'] ?? $default_lead_item
 $lead_operator_id = (string) ( $lead_form['operator_id'] ?? $default_lead_item['operator_id'] ?? '' );
 $lead_operator_name = (string) ( $lead_form['operator_name'] ?? $default_lead_item['operator_name'] ?? '' );
 $lead_operator_slug = (string) ( $lead_form['operator_slug'] ?? $default_lead_item['operator_slug'] ?? '' );
+$lead_route_context = '';
+if ( $show_lead_route_context && '' !== $lead_operator_name && '' !== $lead_route_title ) {
+	$lead_route_context = sprintf(
+		/* translators: 1: operator name, 2: route title */
+		'Bạn đang chọn nhà xe %1$s thuộc tuyến %2$s.',
+		$lead_operator_name,
+		$lead_route_title
+	);
+}
 if ( ! empty( $lead_form_routes ) ) {
 	$classes .= ' mttf-directory-hero--with-lead-form';
 }
@@ -64,7 +77,7 @@ if ( ! empty( $lead_form_routes ) ) {
 							<?php
 							$item_label = (string) ( $item['label'] ?? '' );
 							$item_classes = 'mttf-directory-hero__summary-item';
-							if ( 'Giá từ' === $item_label ) {
+							if ( in_array( $item_label, array( 'Giá từ', 'Từ' ), true ) ) {
 								$item_classes .= ' mttf-directory-hero__summary-item--price';
 							} elseif ( '' === $item_label ) {
 								$item_classes .= ' mttf-directory-hero__summary-item--feature';
@@ -80,16 +93,15 @@ if ( ! empty( $lead_form_routes ) ) {
 					</div>
 				<?php endif; ?>
 				<div class="mttf-directory-hero__actions">
-					<?php if ( '' !== $phone_href && '' !== $phone ) : ?>
-						<a class="mttf-directory-hero__cta mttf-directory-hero__cta--call mttf-js-track" href="<?php echo esc_url( $phone_href ); ?>" data-track-event="call_click" data-track-label="hero_call">Gọi <?php echo esc_html( $phone ); ?></a>
+					<?php if ( '' !== $cta_link_url && '' !== $cta_link_label ) : ?>
+						<a class="mttf-directory-hero__cta mttf-directory-hero__cta--zalo mttf-js-track" href="<?php echo esc_url( $cta_link_url ); ?>" data-track-event="view_route_click" data-track-label="hero_primary_cta"><?php echo esc_html( $cta_link_label ); ?></a>
 					<?php endif; ?>
-				<?php if ( '' !== $zalo_url ) : ?>
-					<a class="mttf-directory-hero__cta mttf-directory-hero__cta--zalo mttf-js-track" href="<?php echo esc_url( $zalo_url ); ?>" target="_blank" rel="noopener" data-track-event="zalo_click" data-track-label="hero_zalo">Chat Zalo</a>
-				<?php endif; ?>
-				<!-- <a class="mttf-directory-hero__secondary-link mttf-js-track" href="<?php echo esc_url( $base_url ); ?>" data-track-event="view_route_click" data-track-label="hero_all_routes">Tất cả tuyến</a>
+					<?php if ( '' !== $phone_href && '' !== $phone ) : ?>
+						<a class="mttf-directory-hero__cta mttf-directory-hero__cta--call mttf-js-track" href="<?php echo esc_url( $phone_href ); ?>" data-track-event="call_click" data-track-label="hero_call"><?php echo esc_html( '' !== $phone_label ? $phone_label : 'Gọi ' . $phone ); ?></a>
+					<?php endif; ?>
 				<?php if ( '' !== $back_url && '' !== $back_label ) : ?>
 					<a class="mttf-directory-hero__secondary-link mttf-js-track" href="<?php echo esc_url( $back_url ); ?>" data-track-event="view_route_click" data-track-label="hero_back_link"><?php echo esc_html( $back_label ); ?></a>
-				<?php endif; ?> -->
+				<?php endif; ?>
 				</div>
 			</div>
 		<?php if ( ! empty( $lead_form_routes ) ) : ?>
@@ -97,6 +109,9 @@ if ( ! empty( $lead_form_routes ) ) {
 				<div class="mttf-directory-hero__lead-card">
 					<h2 class="mttf-directory-hero__lead-title"><?php echo esc_html( $lead_form['title'] ?? 'Tư vấn nhanh theo tuyến' ); ?></h2>
 					<p class="mttf-directory-hero__lead-subtitle"><?php echo esc_html( $lead_form['subtitle'] ?? 'Chọn tuyến bạn cần và để lại số điện thoại để được gọi lại.' ); ?></p>
+					<?php if ( '' !== $lead_route_context ) : ?>
+						<p class="mttf-modal__route"><?php echo esc_html( $lead_route_context ); ?></p>
+					<?php endif; ?>
 					<form class="mttf-lead-form mttf-lead-form--hero" data-mttf-lead-form data-mttf-form-context="hero">
 						<input type="hidden" name="route_id" value="<?php echo esc_attr( $lead_route_id ); ?>" />
 						<input type="hidden" name="route_title" value="<?php echo esc_attr( $lead_route_title ); ?>" />
@@ -129,7 +144,7 @@ if ( ! empty( $lead_form_routes ) ) {
 							<span class="mttf-directory-hero__lead-label">Số điện thoại</span>
 							<div class="mttf-input-wrap">
 								<span class="mttf-input-icon" aria-hidden="true"><?php echo file_get_contents( MTTF_PATH . 'assets/icons/phone-incoming.svg' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-								<input type="tel" name="phone" inputmode="tel" autocomplete="tel" aria-describedby="mttf-hero-phone-hint" placeholder="Nhập số điện thoại để được gọi lại" required />
+								<input type="tel" name="phone" inputmode="tel" autocomplete="tel" aria-describedby="mttf-hero-phone-hint" placeholder="Nhập số điện thoại" required />
 							</div>
 							<span class="screen-reader-text" id="mttf-hero-phone-hint">Nhập số điện thoại để đội ngũ tư vấn liên hệ lại cho bạn.</span>
 						</label>

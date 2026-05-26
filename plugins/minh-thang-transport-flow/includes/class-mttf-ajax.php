@@ -210,32 +210,13 @@ class MTTF_Ajax {
 	}
 
 	/**
-	 * Recipients for lead email: per-route meta if set and valid, else global setting + filter.
+	 * Recipients for lead email.
 	 *
 	 * @param int $route_id Post ID of bai_xe.
 	 * @return string Comma-separated emails or empty if none configured.
 	 */
 	private static function resolve_lead_email_recipients( $route_id ) {
 		$route_id = absint( $route_id );
-		if ( $route_id > 0 && MTTF_CPT::get_article_post_type() === get_post_type( $route_id ) ) {
-			$route_raw = trim( (string) get_post_meta( $route_id, '_mttf_lead_email', true ) );
-			if ( '' !== $route_raw ) {
-				$parts = array_map( 'trim', explode( ',', $route_raw ) );
-				$emails = array();
-				foreach ( $parts as $part ) {
-					$e = sanitize_email( $part );
-					if ( $e && is_email( $e ) ) {
-						$emails[] = $e;
-					}
-				}
-				$emails = array_values( array_unique( $emails ) );
-				if ( ! empty( $emails ) ) {
-					$to = implode( ',', $emails );
-					return (string) apply_filters( 'mttf_lead_email_to', $to, $route_id );
-				}
-			}
-		}
-
 		$default_to = MTTF_Settings::get( 'lead_email', get_option( 'admin_email' ) );
 		$default_to = is_string( $default_to ) ? trim( $default_to ) : '';
 		if ( '' === $default_to ) {

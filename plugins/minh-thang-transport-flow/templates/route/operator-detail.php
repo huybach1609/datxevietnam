@@ -158,6 +158,7 @@ if ( empty( $operator_summary_items ) ) {
 			'operator_id'   => $operator_id,
 			'operator_name' => (string) get_the_title( $operator ),
 			'operator_slug' => (string) get_post_field( 'post_name', $operator_id ),
+			'show_route_context' => false,
 			'routes'        => $hero_lead_routes,
 		),
 	) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>

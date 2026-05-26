@@ -429,6 +429,13 @@
         return;
       }
 
+      var modalTrigger = target.closest(".mttf-open-modal");
+      if (modalTrigger) {
+        event.preventDefault();
+        openFromCard(clickedInsideCard);
+        return;
+      }
+
       if (clickedInsideCard.classList.contains("mttf-route-discovery-card")) {
         if (target.closest("a, button, input, select, textarea, label")) {
           return;
@@ -437,13 +444,6 @@
         if (clickedInsideCard.dataset.detailUrl) {
           window.location.href = clickedInsideCard.dataset.detailUrl;
         }
-        return;
-      }
-
-      var modalTrigger = target.closest(".mttf-open-modal");
-      if (modalTrigger) {
-        event.preventDefault();
-        openFromCard(clickedInsideCard);
         return;
       }
 

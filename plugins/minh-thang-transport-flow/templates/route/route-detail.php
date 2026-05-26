@@ -11,6 +11,14 @@ $route_image   = ! empty( $route_images ) ? (string) $route_images[0] : '';
 $route_price   = (int) get_post_meta( $route_id, '_mttf_price_from', true );
 $route_car_type = (string) get_post_meta( $route_id, '_mttf_car_type', true );
 $route_trip_frequency = (string) get_post_meta( $route_id, '_mttf_trip_frequency', true );
+$selected_route_id = (int) get_post_meta( $route_id, '_mttf_selected_route_id', true );
+$lead_route_title = (string) get_post_meta( $route_id, '_mttf_truyen_xe', true );
+if ( '' === $lead_route_title && $selected_route_id > 0 ) {
+	$lead_route_title = (string) get_the_title( $selected_route_id );
+}
+if ( '' === $lead_route_title ) {
+	$lead_route_title = (string) get_the_title( $route );
+}
 $route_feature_keys = array_slice( (array) get_post_meta( $route_id, '_mttf_route_features', true ), 0, 4 );
 $shared_contacts = $get_shared_contact_details();
 $related_routes = $get_related_routes( $route_id, 3 );
@@ -93,7 +101,7 @@ foreach ( $operator_rows as $operator_row ) {
 
 	$hero_lead_operators[] = array(
 		'route_id'      => $route_id,
-		'route_title'   => (string) get_the_title( $route ),
+		'route_title'   => $lead_route_title,
 		'route_slug'    => $route_slug,
 		'region'        => $route_region,
 		'operator_id'   => $hero_operator_id,
@@ -121,10 +129,10 @@ foreach ( $operator_rows as $operator_row ) {
 		'lead_form'     => array(
 			'title'         => 'Chọn lựa phù hợp, đội ngũ hỗ trợ ngay',
 			'subtitle'      => 'Chọn phương án bạn đang quan tâm, để lại số điện thoại và đội ngũ sẽ liên hệ lại trong ít phút.',
-			'select_label'  => 'Nhà xe cần tư vấn',
+			'select_label'  => 'Nhà xe',
 			'page_type'     => 'route-detail',
 			'route_id'      => $route_id,
-			'route_title'   => (string) get_the_title( $route ),
+			'route_title'   => $lead_route_title,
 			'route_slug'    => $route_slug,
 			'route_region'  => $route_region,
 			'routes'        => $hero_lead_operators,

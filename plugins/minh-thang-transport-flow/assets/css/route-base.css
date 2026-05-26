@@ -132,17 +132,18 @@
   --mttf-directory-hero-tertiary-border: oklch(0.86 0.024 238 / 0.56);
   --mttf-directory-hero-tertiary-border-hover: oklch(0.8 0.08 80 / 0.34);
   position: relative;
-  width: min(70vw, 1536px);
+  width: min(var(--mttf-route-content-max), calc(100vw - (var(--mttf-route-content-gutter) * 2)));
   min-height: clamp(540px, 70vh, 780px);
   background-color: var(--mttf-directory-hero-surface);
   overflow: hidden;
-  margin: clamp(20px, 2.2vw, 36px) auto clamp(44px, 5vw, 72px);
+  margin: 20px auto ;
   border: 1px solid var(--mttf-directory-hero-border);
   border-radius: clamp(18px, 1.6vw, 28px);
   box-shadow:
     var(--mttf-directory-hero-shadow),
     0 1px 0 oklch(0.99 0.004 240 / 0.9) inset;
   isolation: isolate;
+  max-width: var(--mttf-route-content-max);
 }
 
 .mttf-directory-hero__media {

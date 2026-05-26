@@ -101,6 +101,27 @@
   justify-content: space-between;
 }
 
+.mttf-route-page--route-archive .mttf-route-discovery-card__detail-row {
+  margin: -2px 0 8px;
+}
+
+.mttf-route-page--route-archive .mttf-route-discovery-card__count {
+  padding: 0;
+  background: transparent !important;
+  color: var(--mttf-color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--mttf-letter-spacing-label);
+  text-decoration: none;
+}
+
+.mttf-route-page--route-archive a.mttf-route-discovery-card__count:hover,
+.mttf-route-page--route-archive a.mttf-route-discovery-card__count:focus-visible {
+  color: var(--mttf-color-accent-strong);
+  text-decoration: underline;
+}
+
 .mttf-route-page--directory .mttf-route-discovery-card__region,
 .mttf-route-page--directory .mttf-route-discovery-card__count,
 .mttf-route-page--directory .mttf-route-discovery-card__meta span,
@@ -134,7 +155,19 @@
 
 .mttf-route-page--directory .mttf-route-discovery-card__actions,
 .mttf-route-page--route-archive .mttf-route-discovery-card__actions {
+  display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+.mttf-route-discovery-card__count .mttf-js-track{
+  text-decoration: none !important;
+}
+
+.mttf-route-page--directory .mttf-route-discovery-card__actions > *,
+.mttf-route-page--route-archive .mttf-route-discovery-card__actions > * {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
 }
 
 .mttf-route-page--directory .mttf-route-discovery-card__link,
