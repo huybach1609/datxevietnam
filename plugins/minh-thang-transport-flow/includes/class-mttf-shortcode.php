@@ -209,14 +209,13 @@ class MTTF_Shortcode {
 		$search_keyword = isset( $_GET['mttf_q'] ) ? sanitize_text_field( wp_unslash( $_GET['mttf_q'] ) ) : '';
 		$region         = sanitize_text_field( (string) $atts['region'] );
 
-		if ( '' !== $route_slug ) {
+		if ( '' !== $route_slug && '' !== $operator_slug ) {
 			self::enqueue_assets( 'route-route-detail' );
-
-			$route = self::find_route_by_slug( $route_slug );
+			$route = self::find_article_by_route_and_operator( $route_slug, $operator_slug );
 			if ( ! $route ) {
 				return self::render_directory_not_found(
-					'Không tìm thấy tuyến',
-					'Tuyến bạn đang tìm hiện chưa có dữ liệu hiển thị.',
+					'Không tìm thấy bài xe',
+					'Bài xe bạn đang tìm hiện chưa có dữ liệu hiển thị.',
 					$base_url
 				);
 			}
@@ -229,6 +228,38 @@ class MTTF_Shortcode {
 					'base_url'      => $base_url,
 					'operator_rows' => $operator_rows,
 					'route'         => $route,
+				)
+			);
+		}
+
+		if ( '' !== $route_slug ) {
+			self::enqueue_assets( 'route-directory' );
+
+			$route_post = self::find_route_post_by_slug( $route_slug );
+			if ( ! $route_post ) {
+				return self::render_directory_not_found(
+					'Không tìm thấy tuyến',
+					'Tuyến bạn đang tìm hiện chưa có dữ liệu hiển thị.',
+					$base_url
+				);
+			}
+
+			$routes    = self::get_articles_for_route( $route_post->ID, true );
+			$routes    = self::filter_routes_by_region( $routes, $region );
+			$routes    = self::filter_routes( $routes, $search_keyword );
+			$routes    = self::sort_routes( $routes, '' );
+			$car_types = self::collect_car_types( $routes );
+			$operators = self::get_operators_for_articles( $routes );
+
+			return self::render_route_template(
+				'route-archive',
+				array(
+					'base_url'       => $base_url,
+					'car_types'      => $car_types,
+					'operators'      => $operators,
+					'route_post'     => $route_post,
+					'routes'         => $routes,
+					'search_keyword' => $search_keyword,
 				)
 			);
 		}
@@ -263,10 +294,8 @@ class MTTF_Shortcode {
 
 		self::enqueue_assets( 'route-directory' );
 
-		$routes = self::fetch_routes( $region, 500 );
-		$routes = self::filter_routes( $routes, $search_keyword );
-		$routes = self::sort_routes( $routes, '' );
-		$car_types = self::collect_car_types( $routes );
+		$routes = self::fetch_route_posts( $region, 500, $search_keyword );
+		$car_types = array();
 		$operators = self::get_directory_operators();
 
 		return self::render_route_template(
@@ -385,7 +414,7 @@ class MTTF_Shortcode {
 		}
 
 		$args = array(
-			'post_type'      => 'tuyen_xe',
+			'post_type'      => MTTF_CPT::get_article_post_type(),
 			'post_status'    => 'publish',
 			'posts_per_page' => $ppp,
 			'meta_key'       => '_mttf_priority',
@@ -575,6 +604,24 @@ class MTTF_Shortcode {
 	}
 
 	private static function render_directory_route_sections( $routes, $route_priority, $base_url ) {
+		ob_start();
+
+		foreach ( self::group_by_region( $routes, $route_priority ) as $region => $region_routes ) {
+			echo '<section class="mttf-hub mttf-route-directory-group" data-mttf-region="' . esc_attr( $region ) . '">';
+			echo '<h3 class="mttf-hub__title">' . esc_html( self::get_region_title( $region ) ) . '</h3>';
+			echo '<div class="mttf-hub__track mttf-route-directory-grid">';
+
+			foreach ( $region_routes as $route ) {
+				echo self::render_route_summary_card( $route, $base_url ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			}
+
+			echo '</div></section>';
+		}
+
+		return (string) ob_get_clean();
+	}
+
+	private static function render_article_route_sections( $routes, $route_priority, $base_url ) {
 		ob_start();
 
 		foreach ( self::group_by_region( $routes, $route_priority ) as $region => $region_routes ) {
@@ -782,24 +829,45 @@ class MTTF_Shortcode {
 
 	private static function render_route_discovery_card( $route, $base_url ) {
 		$data = self::get_route_card_data( $route );
-		$data['detail_url'] = self::build_route_directory_url( $base_url, $route );
+		$data['detail_url'] = self::build_article_directory_url( $base_url, $route );
 		$data['region_label'] = self::get_region_title_compact( $data['region'] );
+		$data['secondary_cta'] = 'Xem bài xe này';
+		$data['primary_cta'] = 'Xem chi tiết';
 
 		return self::render_route_partial( 'route-discovery-card', $data );
 	}
 
-		private static function render_operator_route_card( $route, $base_url, $operator = null ) {
-			$data = self::get_route_card_data( $route );
-			$shared_contacts = self::get_shared_contact_details();
-			$data['detail_url'] = self::build_route_directory_url( $base_url, $route );
-			$data['region_label'] = self::get_region_title_compact( $data['region'] );
-			$data['operator_id'] = $operator ? (int) $operator->ID : 0;
-			$data['operator_name'] = $operator ? (string) get_the_title( $operator ) : '';
-			$data['operator_slug'] = $operator ? (string) get_post_field( 'post_name', $operator->ID ) : '';
-			$data['zalo_url'] = (string) ( $shared_contacts['zalo_url'] ?? '' );
+	private static function render_route_summary_card( $route_post, $base_url ) {
+		$data = self::get_route_summary_card_data( $route_post );
+		$data['detail_url']   = self::build_route_archive_url( $base_url, $route_post );
+		$data['region_label'] = self::get_region_title_compact( $data['region'] );
+		$data['secondary_cta'] = 'Xem nhà xe tuyến này';
+		$data['primary_cta'] = 'Xem tuyến này';
 
-			return self::render_route_partial( 'operator-route-card', $data );
+		return self::render_route_partial( 'route-discovery-card', $data );
+	}
+
+	private static function render_operator_route_card( $route, $base_url, $operator = null ) {
+		$data = self::get_route_card_data( $route );
+		$shared_contacts = self::get_shared_contact_details();
+		$data['detail_url'] = self::build_route_directory_url( $base_url, $route );
+		$data['region_label'] = self::get_region_title_compact( $data['region'] );
+		$data['operator_id'] = $operator ? (int) $operator->ID : 0;
+		$data['operator_name'] = $operator ? (string) get_the_title( $operator ) : '';
+		$data['operator_slug'] = $operator ? (string) get_post_field( 'post_name', $operator->ID ) : '';
+		$data['zalo_url'] = (string) ( $shared_contacts['zalo_url'] ?? '' );
+
+		if ( $operator ) {
+			$data['detail_url'] = add_query_arg(
+				array(
+					'operator' => rawurlencode( (string) get_post_field( 'post_name', $operator->ID ) ),
+				),
+				$data['detail_url']
+			);
 		}
+
+		return self::render_route_partial( 'operator-route-card', $data );
+	}
 
 	private static function get_related_routes( $route_id, $limit = 3 ) {
 		$route_id = absint( $route_id );
@@ -1266,6 +1334,9 @@ class MTTF_Shortcode {
 		$render_directory_route_sections = static function( array $routes, $route_priority, $base_url ) {
 			return self::render_directory_route_sections( $routes, $route_priority, $base_url );
 		};
+		$render_article_route_sections = static function( array $routes, $route_priority, $base_url ) {
+			return self::render_article_route_sections( $routes, $route_priority, $base_url );
+		};
 		$render_operator_route_sections = static function( array $routes, $route_priority, $base_url, $operator = null ) {
 			return self::render_operator_route_sections( $routes, $route_priority, $base_url, $operator );
 		};
@@ -1431,6 +1502,60 @@ class MTTF_Shortcode {
 		);
 	}
 
+	private static function build_route_archive_url( $base_url, $route_post ) {
+		$slug = MTTF_CPT::get_route_slug_from_route_post( $route_post->ID );
+
+		return add_query_arg(
+			array(
+				'route' => rawurlencode( $slug ),
+			),
+			remove_query_arg( array( 'operator', 'mttf_q' ), $base_url )
+		);
+	}
+
+	private static function build_article_directory_url( $base_url, $route ) {
+		$route_slug  = '';
+		$route_id    = (int) get_post_meta( $route->ID, '_mttf_selected_route_id', true );
+		if ( $route_id > 0 ) {
+			$route_slug = MTTF_CPT::get_route_slug_from_route_post( $route_id );
+		}
+		if ( '' === $route_slug ) {
+			$route_slug = (string) get_post_meta( $route->ID, '_mttf_route_slug', true );
+		}
+		if ( '' === $route_slug ) {
+			$route_slug = sanitize_title( (string) $route->post_name );
+		}
+
+		$url = add_query_arg(
+			array(
+				'route' => rawurlencode( $route_slug ),
+			),
+			remove_query_arg( array( 'operator', 'mttf_q' ), $base_url )
+		);
+		$operator_id = (int) get_post_meta( $route->ID, '_mttf_selected_operator_id', true );
+
+		if ( $operator_id <= 0 && class_exists( 'MTTF_Route_Operators' ) ) {
+			$operator_rows = MTTF_Route_Operators::get_route_operator_rows( $route->ID, true );
+			if ( 1 === count( $operator_rows ) && ! empty( $operator_rows[0]['operator_id'] ) ) {
+				$operator_id = (int) $operator_rows[0]['operator_id'];
+			}
+		}
+
+		if ( $operator_id > 0 ) {
+			$operator_slug = (string) get_post_field( 'post_name', $operator_id );
+			if ( '' !== $operator_slug ) {
+				$url = add_query_arg(
+					array(
+						'operator' => rawurlencode( $operator_slug ),
+					),
+					$url
+				);
+			}
+		}
+
+		return $url;
+	}
+
 	private static function build_operator_directory_url( $base_url, $operator_slug ) {
 		return add_query_arg(
 			array(
@@ -1448,7 +1573,7 @@ class MTTF_Shortcode {
 
 		$routes = get_posts(
 			array(
-				'post_type'      => 'tuyen_xe',
+				'post_type'      => MTTF_CPT::get_article_post_type(),
 				'post_status'    => 'publish',
 				'posts_per_page' => 1,
 				'meta_query'     => array(
@@ -1470,8 +1595,44 @@ class MTTF_Shortcode {
 
 		$fallback = get_posts(
 			array(
-				'post_type'      => 'tuyen_xe',
+				'post_type'      => MTTF_CPT::get_article_post_type(),
 				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'name'           => $slug,
+			)
+		);
+
+		return ! empty( $fallback ) ? $fallback[0] : null;
+	}
+
+	private static function find_route_post_by_slug( $slug ) {
+		$slug = sanitize_title( (string) $slug );
+		if ( '' === $slug ) {
+			return null;
+		}
+
+		$routes = get_posts(
+			array(
+				'post_type'      => MTTF_CPT::get_route_post_type(),
+				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+				'posts_per_page' => 1,
+				'meta_query'     => array(
+					array(
+						'key'   => '_mttf_route_slug',
+						'value' => $slug,
+					),
+				),
+			)
+		);
+
+		if ( ! empty( $routes ) ) {
+			return $routes[0];
+		}
+
+		$fallback = get_posts(
+			array(
+				'post_type'      => MTTF_CPT::get_route_post_type(),
+				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
 				'posts_per_page' => 1,
 				'name'           => $slug,
 			)
@@ -1496,6 +1657,92 @@ class MTTF_Shortcode {
 		);
 
 		return ! empty( $operators ) ? $operators[0] : null;
+	}
+
+	private static function find_article_by_route_and_operator( $route_slug, $operator_slug ) {
+		$route_slug = sanitize_title( (string) $route_slug );
+		$operator   = self::find_operator_by_slug( $operator_slug );
+		if ( '' === $route_slug || ! $operator ) {
+			return null;
+		}
+
+		$route_post = self::find_route_post_by_slug( $route_slug );
+		$candidates = $route_post ? self::get_articles_for_route( $route_post->ID, true ) : self::find_articles_by_legacy_route_slug( $route_slug );
+		if ( empty( $candidates ) ) {
+			return null;
+		}
+
+		$matched = array_values(
+			array_filter(
+				$candidates,
+				static function( $article ) use ( $operator ) {
+					return self::article_matches_operator( $article, (int) $operator->ID );
+				}
+			)
+		);
+
+		if ( empty( $matched ) ) {
+			return null;
+		}
+
+		usort(
+			$matched,
+			static function( $a, $b ) {
+				$priority_a = (int) get_post_meta( $a->ID, '_mttf_priority', true );
+				$priority_b = (int) get_post_meta( $b->ID, '_mttf_priority', true );
+				if ( $priority_a !== $priority_b ) {
+					return $priority_b <=> $priority_a;
+				}
+
+				return strtotime( (string) $b->post_date_gmt ) <=> strtotime( (string) $a->post_date_gmt );
+			}
+		);
+
+		$selected = $matched[0];
+		if ( (int) get_post_meta( $selected->ID, '_mttf_selected_operator_id', true ) <= 0 ) {
+			update_post_meta( $selected->ID, '_mttf_selected_operator_id', (int) $operator->ID );
+		}
+
+		return $selected;
+	}
+
+	private static function find_articles_by_legacy_route_slug( $route_slug ) {
+		return get_posts(
+			array(
+				'post_type'      => MTTF_CPT::get_article_post_type(),
+				'post_status'    => 'publish',
+				'posts_per_page' => 500,
+				'meta_query'     => array(
+					array(
+						'key'   => '_mttf_route_slug',
+						'value' => $route_slug,
+					),
+					array(
+						'key'   => '_mttf_is_active',
+						'value' => 1,
+					),
+				),
+			)
+		);
+	}
+
+	private static function article_matches_operator( $article, $operator_id ) {
+		$selected_operator_id = (int) get_post_meta( $article->ID, '_mttf_selected_operator_id', true );
+		if ( $selected_operator_id > 0 ) {
+			return $selected_operator_id === $operator_id;
+		}
+
+		if ( ! class_exists( 'MTTF_Route_Operators' ) ) {
+			return false;
+		}
+
+		foreach ( MTTF_Route_Operators::get_route_operator_rows( $article->ID, true ) as $row ) {
+			if ( (int) $row['operator_id'] === $operator_id ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static function filter_routes_by_region( $routes, $region ) {
@@ -1556,6 +1803,212 @@ class MTTF_Shortcode {
 		);
 
 		return array_slice( $items, 0, 12 );
+	}
+
+	private static function fetch_route_posts( $region = '', $posts_per_page = 500, $search_keyword = '' ) {
+		$posts = get_posts(
+			array(
+				'post_type'      => MTTF_CPT::get_route_post_type(),
+				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+				'posts_per_page' => max( 1, absint( $posts_per_page ) ),
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		foreach ( $posts as $post ) {
+			$articles = self::get_articles_for_route( $post->ID, true );
+			if ( empty( $articles ) ) {
+				continue;
+			}
+
+			$post_region = (string) get_post_meta( $post->ID, '_mttf_hub_region', true );
+			if ( '' === $post_region ) {
+				$article_region = (string) get_post_meta( $articles[0]->ID, '_mttf_hub_region', true );
+				if ( '' !== $article_region ) {
+					update_post_meta( $post->ID, '_mttf_hub_region', $article_region );
+				}
+			}
+		}
+
+		return array_values(
+			array_filter(
+				$posts,
+				static function( $post ) use ( $region, $search_keyword ) {
+					$articles = self::get_articles_for_route( $post->ID, true );
+					if ( empty( $articles ) ) {
+						return false;
+					}
+
+					if ( '' !== $region && empty( self::filter_routes_by_region( $articles, $region ) ) ) {
+						return false;
+					}
+
+					if ( '' !== $search_keyword ) {
+						$needle = self::normalize_text( $search_keyword );
+						$title  = self::normalize_text( (string) get_the_title( $post ) );
+						if ( false === strpos( $title, $needle ) ) {
+							return false;
+						}
+					}
+
+					return true;
+				}
+			)
+		);
+	}
+
+	private static function get_articles_for_route( $route_post_id, $active_only = true ) {
+		$route_post_id = absint( $route_post_id );
+		if ( $route_post_id <= 0 ) {
+			return array();
+		}
+
+		$route_slug = MTTF_CPT::get_route_slug_from_route_post( $route_post_id );
+		$meta_query = array(
+			'relation' => 'AND',
+			array(
+				'relation' => 'OR',
+				array(
+					'key'   => '_mttf_selected_route_id',
+					'value' => $route_post_id,
+				),
+				array(
+					'key'   => '_mttf_route_slug',
+					'value' => $route_slug,
+				),
+			),
+		);
+
+		if ( $active_only ) {
+			$meta_query[] = array(
+				'key'   => '_mttf_is_active',
+				'value' => 1,
+			);
+		}
+
+		return get_posts(
+			array(
+				'post_type'      => MTTF_CPT::get_article_post_type(),
+				'post_status'    => 'publish',
+				'posts_per_page' => 500,
+				'meta_key'       => '_mttf_priority',
+				'orderby'        => array(
+					'meta_value_num' => 'DESC',
+					'date'           => 'DESC',
+				),
+				'meta_query'     => $meta_query,
+			)
+		);
+	}
+
+	private static function get_route_summary_card_data( $route_post ) {
+		$articles        = self::get_articles_for_route( $route_post->ID, true );
+		$first_article   = ! empty( $articles ) ? $articles[0] : null;
+		$region          = $first_article ? (string) get_post_meta( $first_article->ID, '_mttf_hub_region', true ) : '';
+		$image_url       = $first_article ? (string) get_the_post_thumbnail_url( $first_article->ID, 'medium_large' ) : '';
+		$price_values    = array();
+		$operator_ids    = array();
+		$car_type_counts = array();
+		$trip_frequency  = '';
+		$rating_score    = '';
+		$review_count    = '';
+
+		foreach ( $articles as $article ) {
+			$price = (int) get_post_meta( $article->ID, '_mttf_price_from', true );
+			if ( $price > 0 ) {
+				$price_values[] = $price;
+			}
+
+			$operator_id = (int) get_post_meta( $article->ID, '_mttf_selected_operator_id', true );
+			if ( $operator_id <= 0 && class_exists( 'MTTF_Route_Operators' ) ) {
+				$operator_rows = MTTF_Route_Operators::get_route_operator_rows( $article->ID, true );
+				if ( 1 === count( $operator_rows ) && ! empty( $operator_rows[0]['operator_id'] ) ) {
+					$operator_id = (int) $operator_rows[0]['operator_id'];
+				}
+			}
+			if ( $operator_id > 0 ) {
+				$operator_ids[ $operator_id ] = true;
+			}
+
+			$car_type = trim( (string) get_post_meta( $article->ID, '_mttf_car_type', true ) );
+			if ( '' !== $car_type ) {
+				$car_type_counts[ $car_type ] = ( $car_type_counts[ $car_type ] ?? 0 ) + 1;
+			}
+
+			if ( '' === $trip_frequency ) {
+				$trip_frequency = (string) get_post_meta( $article->ID, '_mttf_trip_frequency', true );
+			}
+
+			if ( '' === $rating_score ) {
+				$rating_score = (string) get_post_meta( $article->ID, '_mttf_rating_score', true );
+			}
+
+			if ( '' === $review_count ) {
+				$review_count = (string) get_post_meta( $article->ID, '_mttf_review_count', true );
+			}
+		}
+
+		arsort( $car_type_counts );
+
+		return array(
+			'post_id'        => (int) $route_post->ID,
+			'title'          => (string) get_the_title( $route_post ),
+			'route_slug'     => MTTF_CPT::get_route_slug_from_route_post( $route_post->ID ),
+			'price_from'     => ! empty( $price_values ) ? min( $price_values ) : 0,
+			'trip_frequency' => $trip_frequency,
+			'car_type'       => ! empty( $car_type_counts ) ? (string) array_key_first( $car_type_counts ) : '',
+			'region'         => $region,
+			'image_url'      => $image_url ? $image_url : self::get_default_route_hero_image(),
+			'rating_score'   => $rating_score,
+			'review_count'   => $review_count,
+			'hot_badges'     => array(),
+			'operator_count' => count( $operator_ids ),
+		);
+	}
+
+	private static function get_operators_for_articles( array $articles ) {
+		if ( ! class_exists( 'MTTF_Operator' ) || ! class_exists( 'MTTF_Route_Operators' ) ) {
+			return array();
+		}
+
+		$items = array();
+
+		foreach ( $articles as $article ) {
+			$operator_id = (int) get_post_meta( $article->ID, '_mttf_selected_operator_id', true );
+			if ( $operator_id <= 0 ) {
+				$operator_rows = MTTF_Route_Operators::get_route_operator_rows( $article->ID, true );
+				if ( 1 === count( $operator_rows ) && ! empty( $operator_rows[0]['operator_id'] ) ) {
+					$operator_id = (int) $operator_rows[0]['operator_id'];
+				}
+			}
+			if ( $operator_id <= 0 || isset( $items[ $operator_id ] ) ) {
+				continue;
+			}
+
+			$items[ $operator_id ] = array(
+				'id'         => $operator_id,
+				'name'       => get_the_title( $operator_id ),
+				'slug'       => (string) get_post_field( 'post_name', $operator_id ),
+				'logo'       => (string) get_the_post_thumbnail_url( $operator_id, 'medium' ),
+				'route_count'=> count( MTTF_Route_Operators::get_operator_routes( $operator_id, true ) ),
+				'priority'   => (int) get_post_meta( $operator_id, MTTF_Operator::META_PRIORITY, true ),
+			);
+		}
+
+		$items = array_values( $items );
+		usort(
+			$items,
+			static function( $a, $b ) {
+				if ( (int) $a['priority'] === (int) $b['priority'] ) {
+					return strcasecmp( (string) $a['name'], (string) $b['name'] );
+				}
+
+				return (int) $b['priority'] <=> (int) $a['priority'];
+			}
+		);
+
+		return $items;
 	}
 
 	private static function get_operator_initials( $name ) {

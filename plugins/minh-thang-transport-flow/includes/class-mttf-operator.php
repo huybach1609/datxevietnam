@@ -65,7 +65,7 @@ class MTTF_Operator {
 				'labels'              => $labels,
 				'public'              => false,
 				'show_ui'             => true,
-				'show_in_menu'        => 'edit.php?post_type=tuyen_xe',
+				'show_in_menu'        => 'edit.php?post_type=' . MTTF_CPT::get_article_post_type(),
 				'show_in_nav_menus'   => false,
 				'publicly_queryable'  => false,
 				'exclude_from_search' => true,

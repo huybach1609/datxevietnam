@@ -32,7 +32,7 @@ class MTTF_Settings {
 	 * @return string
 	 */
 	public static function ensure_settings_default_tab_in_menu( $submenu_file, $parent_file ) {
-		if ( 'edit.php?post_type=tuyen_xe' !== $parent_file ) {
+		if ( 'edit.php?post_type=' . MTTF_CPT::get_article_post_type() !== $parent_file ) {
 			return $submenu_file;
 		}
 		$f = (string) $submenu_file;
@@ -50,13 +50,13 @@ class MTTF_Settings {
 				'page' => 'mttf-settings',
 				'tab'  => 'lead',
 			),
-			'edit.php?post_type=tuyen_xe'
+			'edit.php?post_type=' . MTTF_CPT::get_article_post_type()
 		);
 	}
 
 	public static function add_settings_page() {
 		add_submenu_page(
-			'edit.php?post_type=tuyen_xe',
+			'edit.php?post_type=' . MTTF_CPT::get_article_post_type(),
 			'Cài đặt MTTF',
 			'Cài đặt',
 			'manage_options',
@@ -914,7 +914,7 @@ class MTTF_Settings {
 	}
 
 	public static function enqueue_assets( $hook ) {
-		if ( 'tuyen_xe_page_mttf-settings' !== $hook ) {
+		if ( MTTF_CPT::get_article_post_type() . '_page_mttf-settings' !== $hook ) {
 			return;
 		}
 
@@ -937,7 +937,7 @@ class MTTF_Settings {
 		$tab = sanitize_key( $tab );
 		return add_query_arg(
 			array(
-				'post_type' => 'tuyen_xe',
+				'post_type' => MTTF_CPT::get_article_post_type(),
 				'page'      => 'mttf-settings',
 				'tab'       => $tab,
 			),
@@ -1081,7 +1081,7 @@ class MTTF_Settings {
 
 		$route_ids = get_posts(
 			array(
-				'post_type'      => 'tuyen_xe',
+				'post_type'      => MTTF_CPT::get_article_post_type(),
 				'post_status'    => 'any',
 				'posts_per_page' => -1,
 				'fields'         => 'ids',
@@ -1096,7 +1096,7 @@ class MTTF_Settings {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'post_type'               => 'tuyen_xe',
+					'post_type'               => MTTF_CPT::get_article_post_type(),
 					'page'                    => 'mttf-settings',
 					'tab'                     => 'lead',
 					'mttf_search_stats_reset' => '1',
@@ -1110,7 +1110,7 @@ class MTTF_Settings {
 	private static function get_route_search_stats() {
 		$route_ids = get_posts(
 			array(
-				'post_type'      => 'tuyen_xe',
+				'post_type'      => MTTF_CPT::get_article_post_type(),
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
 				'fields'         => 'ids',

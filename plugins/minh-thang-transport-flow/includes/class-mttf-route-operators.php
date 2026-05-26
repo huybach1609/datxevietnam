@@ -11,15 +11,15 @@ class MTTF_Route_Operators {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_assign_routes_page' ) );
 		add_action( 'admin_post_mttf_save_operator_routes', array( __CLASS__, 'handle_assign_routes_submit' ) );
-		add_filter( 'manage_tuyen_xe_posts_columns', array( __CLASS__, 'set_route_admin_columns' ), 20 );
-		add_action( 'manage_tuyen_xe_posts_custom_column', array( __CLASS__, 'render_route_admin_column' ), 10, 2 );
+		add_filter( 'manage_' . MTTF_CPT::get_article_post_type() . '_posts_columns', array( __CLASS__, 'set_route_admin_columns' ), 20 );
+		add_action( 'manage_' . MTTF_CPT::get_article_post_type() . '_posts_custom_column', array( __CLASS__, 'render_route_admin_column' ), 10, 2 );
 		add_action( 'restrict_manage_posts', array( __CLASS__, 'render_route_operator_filter' ) );
 		add_action( 'pre_get_posts', array( __CLASS__, 'filter_routes_by_operator' ) );
 	}
 
 	public static function add_assign_routes_page() {
 		add_submenu_page(
-			'edit.php?post_type=tuyen_xe',
+			'edit.php?post_type=' . MTTF_CPT::get_article_post_type(),
 			'Gán tuyến',
 			'Gán tuyến',
 			'edit_posts',
@@ -45,7 +45,7 @@ class MTTF_Route_Operators {
 				<p>Chưa có nhà xe nào. Hãy tạo nhà xe trước ở menu <strong>Nhà xe</strong>.</p>
 			<?php else : ?>
 				<form method="get" action="">
-					<input type="hidden" name="post_type" value="tuyen_xe" />
+					<input type="hidden" name="post_type" value="<?php echo esc_attr( MTTF_CPT::get_article_post_type() ); ?>" />
 					<input type="hidden" name="page" value="<?php echo esc_attr( self::ASSIGN_ROUTES_PAGE ); ?>" />
 					<table class="form-table" role="presentation">
 						<tbody>
@@ -138,7 +138,7 @@ class MTTF_Route_Operators {
 				wp_safe_redirect(
 			add_query_arg(
 				array(
-					'post_type'   => 'tuyen_xe',
+					'post_type'   => MTTF_CPT::get_article_post_type(),
 					'page'        => self::ASSIGN_ROUTES_PAGE,
 					'operator_id' => $operator_id,
 					'updated'     => 1,
@@ -193,7 +193,7 @@ class MTTF_Route_Operators {
 	public static function render_route_operator_filter() {
 		global $typenow;
 
-		if ( 'tuyen_xe' !== $typenow ) {
+		if ( MTTF_CPT::get_article_post_type() !== $typenow ) {
 			return;
 		}
 
@@ -220,7 +220,7 @@ class MTTF_Route_Operators {
 			return;
 		}
 
-		if ( 'tuyen_xe' !== $query->get( 'post_type' ) ) {
+		if ( MTTF_CPT::get_article_post_type() !== $query->get( 'post_type' ) ) {
 			return;
 		}
 
@@ -294,7 +294,7 @@ class MTTF_Route_Operators {
 
 		$posts = get_posts(
 			array(
-				'post_type'      => 'tuyen_xe',
+				'post_type'      => MTTF_CPT::get_article_post_type(),
 				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
 				'posts_per_page' => -1,
 				'meta_key'       => self::META_OPERATOR_ID,
@@ -391,7 +391,7 @@ class MTTF_Route_Operators {
 	private static function get_all_routes() {
 		$posts = get_posts(
 			array(
-				'post_type'      => 'tuyen_xe',
+				'post_type'      => MTTF_CPT::get_article_post_type(),
 				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
 				'posts_per_page' => -1,
 			)

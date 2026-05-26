@@ -37,8 +37,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 		<?php endif; ?>
 		<div class="mttf-card__actions mttf-route-discovery-card__actions">
-			<a class="mttf-route-discovery-card__link mttf-js-track" href="<?php echo esc_url( $detail_url ); ?>" data-track-event="view_route_click" data-track-label="directory_card_view_operator_list">Xem nhà xe tuyến này</a>
-			<a class="mttf-btn mttf-btn--call mttf-route-discovery-card__button mttf-js-track" href="<?php echo esc_url( $detail_url ); ?>" data-track-event="view_route_click" data-track-label="directory_card_view_route">Xem tuyến này</a>
+			<a class="mttf-route-discovery-card__link mttf-js-track" href="<?php echo esc_url( $detail_url ); ?>" data-track-event="view_route_click" data-track-label="directory_card_view_operator_list"><?php echo esc_html( isset( $secondary_cta ) ? (string) $secondary_cta : 'Xem nhà xe tuyến này' ); ?></a>
+			<a class="mttf-btn mttf-btn--call mttf-route-discovery-card__button mttf-js-track" href="<?php echo esc_url( $detail_url ); ?>" data-track-event="view_route_click" data-track-label="directory_card_view_route"><?php echo esc_html( isset( $primary_cta ) ? (string) $primary_cta : 'Xem tuyến này' ); ?></a>
 		</div>
 	</div>
 </article>

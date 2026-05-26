@@ -136,7 +136,7 @@ class MTTF_Ajax {
 
 		$query = new WP_Query(
 			array(
-				'post_type'      => 'tuyen_xe',
+				'post_type'      => MTTF_CPT::get_article_post_type(),
 				'post_status'    => 'publish',
 				'posts_per_page' => 50,
 				's'              => $keyword,
@@ -161,7 +161,7 @@ class MTTF_Ajax {
 		check_ajax_referer( 'mttf_track_route_search', 'nonce' );
 
 		$route_id = absint( $_POST['route_id'] ?? 0 );
-		if ( $route_id <= 0 || 'tuyen_xe' !== get_post_type( $route_id ) ) {
+		if ( $route_id <= 0 || MTTF_CPT::get_article_post_type() !== get_post_type( $route_id ) ) {
 			wp_send_json_error(
 				array(
 					'message' => 'Tuyến không hợp lệ.',
@@ -212,12 +212,12 @@ class MTTF_Ajax {
 	/**
 	 * Recipients for lead email: per-route meta if set and valid, else global setting + filter.
 	 *
-	 * @param int $route_id Post ID of tuyen_xe.
+	 * @param int $route_id Post ID of bai_xe.
 	 * @return string Comma-separated emails or empty if none configured.
 	 */
 	private static function resolve_lead_email_recipients( $route_id ) {
 		$route_id = absint( $route_id );
-		if ( $route_id > 0 && 'tuyen_xe' === get_post_type( $route_id ) ) {
+		if ( $route_id > 0 && MTTF_CPT::get_article_post_type() === get_post_type( $route_id ) ) {
 			$route_raw = trim( (string) get_post_meta( $route_id, '_mttf_lead_email', true ) );
 			if ( '' !== $route_raw ) {
 				$parts = array_map( 'trim', explode( ',', $route_raw ) );

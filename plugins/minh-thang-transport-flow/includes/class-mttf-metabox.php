@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class MTTF_Metabox {
 	public static function init() {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_metabox' ) );
-		add_action( 'save_post_tuyen_xe', array( __CLASS__, 'save_metabox' ) );
+		add_action( 'save_post_' . MTTF_CPT::get_article_post_type(), array( __CLASS__, 'save_metabox' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 	}
 
@@ -16,7 +16,7 @@ class MTTF_Metabox {
 		}
 
 		$screen = get_current_screen();
-		if ( ! $screen || 'tuyen_xe' !== $screen->post_type ) {
+		if ( ! $screen || MTTF_CPT::get_article_post_type() !== $screen->post_type ) {
 			return;
 		}
 
@@ -33,9 +33,9 @@ class MTTF_Metabox {
 	public static function register_metabox() {
 		add_meta_box(
 			'mttf_route_info',
-			'Thông tin tuyến xe',
+			'Thông tin bài xe',
 			array( __CLASS__, 'render_metabox' ),
-			'tuyen_xe',
+			MTTF_CPT::get_article_post_type(),
 			'normal',
 			'high'
 		);
@@ -44,7 +44,9 @@ class MTTF_Metabox {
 	public static function render_metabox( $post ) {
 		wp_nonce_field( 'mttf_save_route_info', 'mttf_nonce' );
 
-		$values = self::get_values( $post->ID );
+		$values          = self::get_values( $post->ID );
+		$route_choices   = self::get_route_choices();
+		$operator_choices = class_exists( 'MTTF_Operator' ) ? MTTF_Operator::get_operator_choices( false ) : array();
 		$features = array(
 			'don_tra_tan_noi'                 => 'Đón trả tận nơi',
 			'don_tra_linh_hoat'               => 'Đón trả linh hoạt',
@@ -67,6 +69,39 @@ class MTTF_Metabox {
 		?>
 		<table class="form-table" role="presentation">
 			<tbody>
+			<tr>
+				<th><label for="mttf_truyen_xe">Tuyến xe</label></th>
+				<td>
+					<input name="mttf_truyen_xe" id="mttf_truyen_xe" type="text" class="regular-text" value="<?php echo esc_attr( $values['truyen_xe'] ); ?>" />
+					<p class="description">Tên tuyến xe đơn giản để gắn với bài xe này.</p>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="mttf_selected_route_id">Chọn tuyến</label></th>
+				<td>
+					<select name="mttf_selected_route_id" id="mttf_selected_route_id" class="regular-text">
+						<option value="">Chọn tuyến xe</option>
+						<?php foreach ( $route_choices as $route_choice ) : ?>
+							<option value="<?php echo esc_attr( (string) $route_choice['id'] ); ?>" <?php selected( $values['selected_route_id'], (int) $route_choice['id'] ); ?>>
+								<?php echo esc_html( $route_choice['label'] ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="mttf_selected_operator_id">Chọn nhà xe</label></th>
+				<td>
+					<select name="mttf_selected_operator_id" id="mttf_selected_operator_id" class="regular-text">
+						<option value="">Chọn nhà xe</option>
+						<?php foreach ( $operator_choices as $operator_choice ) : ?>
+							<option value="<?php echo esc_attr( (string) $operator_choice['id'] ); ?>" <?php selected( $values['selected_operator_id'], (int) $operator_choice['id'] ); ?>>
+								<?php echo esc_html( $operator_choice['label'] ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
 			<tr>
 				<th><label for="mttf_route_slug">Route Slug</label></th>
 				<td>
@@ -205,6 +240,23 @@ class MTTF_Metabox {
 			return;
 		}
 
+		$selected_route_id = absint( $_POST['mttf_selected_route_id'] ?? 0 );
+		$selected_operator_id = absint( $_POST['mttf_selected_operator_id'] ?? 0 );
+		$truyen_xe = sanitize_text_field( wp_unslash( $_POST['mttf_truyen_xe'] ?? '' ) );
+		if ( $selected_route_id > 0 ) {
+			$route_slug = MTTF_CPT::get_route_slug_from_route_post( $selected_route_id );
+			if ( '' !== $route_slug && empty( $_POST['mttf_route_slug'] ) ) {
+				$_POST['mttf_route_slug'] = $route_slug;
+			}
+
+			if ( '' === $truyen_xe ) {
+				$truyen_xe = (string) get_the_title( $selected_route_id );
+			}
+		}
+
+		update_post_meta( $post_id, '_mttf_truyen_xe', $truyen_xe );
+		update_post_meta( $post_id, '_mttf_selected_route_id', $selected_route_id );
+		update_post_meta( $post_id, '_mttf_selected_operator_id', $selected_operator_id );
 		update_post_meta( $post_id, '_mttf_route_slug', sanitize_title( wp_unslash( $_POST['mttf_route_slug'] ?? '' ) ) );
 		update_post_meta( $post_id, '_mttf_hub_region', sanitize_text_field( wp_unslash( $_POST['mttf_hub_region'] ?? 'bac' ) ) );
 		update_post_meta( $post_id, '_mttf_price_from', absint( $_POST['mttf_price_from'] ?? 0 ) );
@@ -234,6 +286,9 @@ class MTTF_Metabox {
 
 	private static function get_values( $post_id ) {
 		return array(
+			'truyen_xe'       => get_post_meta( $post_id, '_mttf_truyen_xe', true ),
+			'selected_route_id' => (int) get_post_meta( $post_id, '_mttf_selected_route_id', true ),
+			'selected_operator_id' => (int) get_post_meta( $post_id, '_mttf_selected_operator_id', true ),
 			'route_slug'       => get_post_meta( $post_id, '_mttf_route_slug', true ),
 			'hub_region'       => get_post_meta( $post_id, '_mttf_hub_region', true ) ?: 'bac',
 			'price_from'       => get_post_meta( $post_id, '_mttf_price_from', true ),
@@ -254,6 +309,28 @@ class MTTF_Metabox {
 			'telegram_chat_id' => get_post_meta( $post_id, '_mttf_telegram_chat_id', true ),
 			'is_active'        => (int) get_post_meta( $post_id, '_mttf_is_active', true ),
 		);
+	}
+
+	private static function get_route_choices() {
+		$posts = get_posts(
+			array(
+				'post_type'      => MTTF_CPT::get_route_post_type(),
+				'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		$choices = array();
+		foreach ( $posts as $post ) {
+			$choices[] = array(
+				'id'    => (int) $post->ID,
+				'label' => (string) get_the_title( $post ),
+			);
+		}
+
+		return $choices;
 	}
 
 	private static function parse_gallery_ids( $raw_ids ) {
