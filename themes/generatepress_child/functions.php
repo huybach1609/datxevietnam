@@ -380,6 +380,7 @@ function dxvn_sanitize_header_settings( $input ) {
 		'contact_special_international_desc',
 		'contact_special_partner_desc',
 	);
+	$number_keys = array();
 
 	for ( $i = 1; $i <= 6; $i++ ) {
 		$textarea_keys[] = 'home_benefit_' . $i . '_text';
@@ -393,6 +394,7 @@ function dxvn_sanitize_header_settings( $input ) {
 		$textarea_keys[] = 'home_faq_' . $i . '_a';
 	}
 	for ( $i = 1; $i <= 4; $i++ ) {
+		$number_keys[]   = 'about_scale_' . $i . '_number';
 		$textarea_keys[] = 'about_scale_' . $i . '_desc';
 		$textarea_keys[] = 'about_core_' . $i . '_text';
 		$textarea_keys[] = 'about_verify_' . $i . '_text';
@@ -414,7 +416,7 @@ function dxvn_sanitize_header_settings( $input ) {
 			continue;
 		}
 
-		if ( preg_match( '/_number$/', (string) $key ) ) {
+		if ( in_array( $key, $number_keys, true ) ) {
 			$sanitized[ $key ] = absint( $input[ $key ] );
 			continue;
 		}

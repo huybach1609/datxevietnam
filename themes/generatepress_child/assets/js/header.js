@@ -69,9 +69,72 @@
     initSubmenuToggles();
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initHeaderToggle);
-  } else {
+  function initSmoothAnchorScroll() {
+    document.addEventListener("click", function (event) {
+      var link = event.target && event.target.closest ? event.target.closest("a[href*='#']") : null;
+      if (!link) return;
+
+      var url;
+      try {
+        url = new URL(link.getAttribute("href"), window.location.href);
+      } catch (error) {
+        return;
+      }
+
+      if (!url.hash || url.origin !== window.location.origin || url.pathname !== window.location.pathname) {
+        return;
+      }
+
+      var targetId;
+      try {
+        targetId = decodeURIComponent(url.hash.slice(1));
+      } catch (error) {
+        return;
+      }
+
+      var target = document.getElementById(targetId);
+      if (!target) return;
+
+      event.preventDefault();
+
+      var header = document.querySelector(".dxvn-header");
+      var toggle = header ? header.querySelector(".dxvn-header__toggle") : null;
+      var prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var headerOffset = header ? header.getBoundingClientRect().height + 16 : 16;
+      var targetTop = target.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+
+      if (header && header.classList.contains("is-open")) {
+        header.classList.remove("is-open");
+        if (toggle) {
+          toggle.setAttribute("aria-expanded", "false");
+        }
+      }
+
+      window.scrollTo({
+        top: Math.max(targetTop, 0),
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+      });
+
+      if (window.history && typeof window.history.pushState === "function") {
+        window.history.pushState({}, "", url.hash);
+      }
+
+      if (typeof target.focus === "function") {
+        setTimeout(function () {
+          target.focus({ preventScroll: true });
+        }, prefersReducedMotion ? 0 : 450);
+      }
+    });
+  }
+
+  function boot() {
     initHeaderToggle();
+    initSmoothAnchorScroll();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
   }
 })();
