@@ -72,26 +72,6 @@ function dxvn_render_custom_footer() {
 	get_template_part( 'template-parts/footer/site', 'footer-custom' );
 }
 
-add_filter( 'generate_sidebar_layout', 'dxvn_disable_sidebar_for_route_directory' );
-function dxvn_disable_sidebar_for_route_directory( $layout ) {
-	if ( ! is_page() ) {
-		return $layout;
-	}
-
-	$post = get_queried_object();
-	if ( ! ( $post instanceof WP_Post ) ) {
-		return $layout;
-	}
-
-	$has_route_shortcode = has_shortcode( (string) $post->post_content, 'mttf_route' ) || has_shortcode( (string) $post->post_content, 'mttf_route_directory' );
-
-	if ( 'route' === $post->post_name || $has_route_shortcode ) {
-		return 'no-sidebar';
-	}
-
-	return $layout;
-}
-
 add_action( 'admin_menu', 'dxvn_register_header_settings_page' );
 function dxvn_register_header_settings_page() {
 	add_theme_page(
@@ -901,7 +881,7 @@ function dxvn_get_footer_default_settings() {
 		'partners_title'    => 'Đối tác của chúng tôi',
 		'partners'          => array(),
 		'brand_description' => 'Nền tảng đặt xe limousine và du lịch hàng đầu Việt Nam. Cam kết: thông tin minh bạch, hỗ trợ nhanh, xác nhận qua email/SMS.',
-		'brand_contact_items' => "Hotline|0900 000 000\nEmail|" . get_option( 'admin_email', 'support@datxevietnam.vn' ) . "\nĐịa chỉ|23 P. Tô Mịch, Phường Yên Hòa, Hà Nội",
+		'brand_contact_items' => "Hotline|0900 000 000\nDi động|094 247 1111\nEmail|" . get_option( 'admin_email', 'support@datxevietnam.vn' ) . "\nĐịa chỉ|23 P. Tô Mịch, Phường Yên Hòa, Hà Nội",
 		'office_title'      => 'Danh sách văn phòng',
 		'office_map_label'  => 'Xem bản đồ',
 		'office_items'      => "80 Hồng Tiến, Phường Bồ Đề, Hà Nội|#\n214 Đ. Trần Quang Khải, phường Hoàn Kiếm, Hà Nội|#\n56 P. Vọng, Phường Bạch Mai, Hà Nội|#\n23 P. Tú Mỡ, Phường Yên Hòa, Hà Nội|#\n51 Minh Khai, Phường Bạch Mai, Hà Nội|#",
@@ -967,23 +947,94 @@ function dxvn_sanitize_footer_partners( $partners ) {
 			continue;
 		}
 
-		$image_id = absint( $partner['image_id'] ?? 0 );
-		$raw_link = trim( (string) ( $partner['link'] ?? '' ) );
-		$link     = '#' === $raw_link ? '#' : esc_url_raw( $raw_link );
-		$name     = sanitize_text_field( $partner['name'] ?? '' );
+		$image_id  = absint( $partner['image_id'] ?? 0 );
+		$image_url = esc_url_raw( trim( (string) ( $partner['image_url'] ?? '' ) ) );
+		$raw_link  = trim( (string) ( $partner['link'] ?? '' ) );
+		$link      = '#' === $raw_link ? '#' : esc_url_raw( $raw_link );
+		$name      = sanitize_text_field( $partner['name'] ?? '' );
 
-		if ( 0 === $image_id ) {
+		if ( 0 === $image_id && '' === $image_url ) {
 			continue;
 		}
 
+		if ( '' === $image_url && $image_id > 0 ) {
+			$attachment_url = wp_get_attachment_url( $image_id );
+			if ( is_string( $attachment_url ) && '' !== $attachment_url ) {
+				$image_url = esc_url_raw( $attachment_url );
+			}
+		}
+
 		$cleaned[] = array(
-			'image_id' => $image_id,
-			'link'     => $link,
-			'name'     => $name,
+			'image_id'  => $image_id,
+			'image_url' => $image_url,
+			'link'      => $link,
+			'name'      => $name,
 		);
 	}
 
 	return $cleaned;
+}
+
+/**
+ * Resolve partner logo URL from attachment ID or stored direct URL.
+ *
+ * @param array<string,mixed> $partner Partner row.
+ * @param string              $size    Image size.
+ * @return string
+ */
+function dxvn_resolve_footer_partner_image_url( $partner, $size = 'medium' ) {
+	if ( ! is_array( $partner ) ) {
+		return '';
+	}
+
+	$image_id = absint( $partner['image_id'] ?? 0 );
+	if ( $image_id > 0 ) {
+		$sizes = array_unique( array( $size, 'medium', 'full', 'thumbnail' ) );
+		foreach ( $sizes as $try_size ) {
+			$url = wp_get_attachment_image_url( $image_id, $try_size );
+			if ( is_string( $url ) && '' !== $url ) {
+				return $url;
+			}
+		}
+	}
+
+	$direct = trim( (string) ( $partner['image_url'] ?? '' ) );
+	if ( '' !== $direct ) {
+		if ( wp_http_validate_url( $direct ) ) {
+			return esc_url_raw( $direct );
+		}
+		if ( 0 === strpos( $direct, '/' ) ) {
+			return esc_url_raw( home_url( $direct ) );
+		}
+	}
+
+	return '';
+}
+
+/**
+ * Partners that have a displayable logo URL.
+ *
+ * @param array<int,array<string,mixed>> $partners Raw partners from settings.
+ * @return array<int,array<string,mixed>>
+ */
+function dxvn_get_footer_partners_for_display( array $partners ) {
+	$ready = array();
+
+	foreach ( $partners as $partner ) {
+		if ( ! is_array( $partner ) ) {
+			continue;
+		}
+
+		$image_url = dxvn_resolve_footer_partner_image_url( $partner );
+		if ( '' === $image_url ) {
+			continue;
+		}
+
+		$partner['_display_image_url'] = $image_url;
+		$ready[]                     = $partner;
+	}
+
+	return $ready;
 }
 
 function dxvn_get_footer_settings() {
@@ -1068,57 +1119,212 @@ function dxvn_parse_footer_contact_items( $raw_lines ) {
 	return $items;
 }
 
-function dxvn_get_footer_popular_routes() {
+/**
+ * Liên hệ cột 1 footer (đảm bảo có Di động ngay sau Hotline).
+ *
+ * @return array<int,array{label:string,value:string,url:string}>
+ */
+function dxvn_get_footer_brand_contacts() {
+	$settings = dxvn_get_footer_settings();
+	$items    = dxvn_parse_footer_contact_items( $settings['brand_contact_items'] ?? '' );
+
+	$has_mobile = false;
+	foreach ( $items as $item ) {
+		$label_norm = function_exists( 'remove_accents' ) ? strtolower( remove_accents( (string) ( $item['label'] ?? '' ) ) ) : strtolower( (string) ( $item['label'] ?? '' ) );
+		if ( false !== strpos( $label_norm, 'di dong' ) || false !== strpos( $label_norm, 'di động' ) ) {
+			$has_mobile = true;
+			break;
+		}
+	}
+
+	if ( $has_mobile ) {
+		return $items;
+	}
+
+	$mobile_item = array(
+		'label' => 'Di động',
+		'value' => '094 247 1111',
+		'url'   => '',
+	);
+
+	$new_items = array();
+	$inserted  = false;
+	foreach ( $items as $item ) {
+		$new_items[] = $item;
+		$label_norm  = function_exists( 'remove_accents' ) ? strtolower( remove_accents( (string) ( $item['label'] ?? '' ) ) ) : strtolower( (string) ( $item['label'] ?? '' ) );
+		if ( ! $inserted && false !== strpos( $label_norm, 'hotline' ) ) {
+			$new_items[] = $mobile_item;
+			$inserted    = true;
+		}
+	}
+
+	if ( ! $inserted ) {
+		array_unshift( $new_items, $mobile_item );
+	}
+
+	return $new_items;
+}
+
+/**
+ * Taxonomy slug tuyến landing (MTTF).
+ *
+ * @return string
+ */
+function dxvn_get_tuyen_taxonomy_slug() {
+	return class_exists( 'MTTF_Landing_Taxonomies' ) ? MTTF_Landing_Taxonomies::TAX_TUYEN : 'mttf_tuyen';
+}
+
+/**
+ * @param WP_Term $term Tuyến term.
+ * @return array{text:string,url:string}|null
+ */
+function dxvn_footer_tuyen_term_to_item( WP_Term $term ) {
+	$link = get_term_link( $term );
+	if ( is_wp_error( $link ) ) {
+		return null;
+	}
+
+	return array(
+		'text' => 'Đặt vé xe ' . $term->name,
+		'url'  => $link,
+	);
+}
+
+/**
+ * @param WP_Term $term Tuyến term.
+ * @return int
+ */
+function dxvn_count_active_routes_for_tuyen_term( WP_Term $term ) {
+	if ( class_exists( 'MTTF_Landing_Query' ) ) {
+		return count( MTTF_Landing_Query::get_routes_for_tuyen( $term ) );
+	}
+
 	$routes = get_posts(
 		array(
 			'post_type'      => 'tuyen_xe',
 			'post_status'    => 'publish',
-			'posts_per_page' => -1,
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'tax_query'      => array(
+				array(
+					'taxonomy' => dxvn_get_tuyen_taxonomy_slug(),
+					'field'    => 'term_id',
+					'terms'    => array( (int) $term->term_id ),
+				),
+			),
 			'meta_query'     => array(
 				array(
 					'key'   => '_mttf_is_active',
-					'value' => 1,
+					'value' => '1',
 				),
 			),
 		)
 	);
 
-	$items = array();
+	return is_array( $routes ) ? count( $routes ) : 0;
+}
 
-	usort(
-		$routes,
-		static function( $a, $b ) {
-			$search_count_a = (int) get_post_meta( $a->ID, '_mttf_search_count', true );
-			$search_count_b = (int) get_post_meta( $b->ID, '_mttf_search_count', true );
-			$priority_a     = (int) get_post_meta( $a->ID, '_mttf_priority', true );
-			$priority_b     = (int) get_post_meta( $b->ID, '_mttf_priority', true );
+/**
+ * Dịch vụ phổ biến — cột 3 footer (động từ mttf_tuyen).
+ *
+ * @return array<int,array{text:string,url:string}>
+ */
+function dxvn_get_footer_popular_routes() {
+	$limit    = 8;
+	$taxonomy = dxvn_get_tuyen_taxonomy_slug();
+	$items    = array();
+	$used_ids = array();
 
-			if ( $search_count_a !== $search_count_b ) {
-				return $search_count_b <=> $search_count_a;
-			}
-
-			if ( $priority_a !== $priority_b ) {
-				return $priority_b <=> $priority_a;
-			}
-
-			return strtotime( $b->post_date_gmt ) <=> strtotime( $a->post_date_gmt );
+	$push_term = static function ( WP_Term $term ) use ( &$items, &$used_ids, $limit ) {
+		if ( count( $items ) >= $limit || isset( $used_ids[ (int) $term->term_id ] ) ) {
+			return;
 		}
+
+		$item = dxvn_footer_tuyen_term_to_item( $term );
+		if ( null === $item ) {
+			return;
+		}
+
+		$items[] = $item;
+		$used_ids[ (int) $term->term_id ] = true;
+	};
+
+	// 1) Tuyến phổ biến do admin chọn (Hero trang chủ — MTTF).
+	if ( class_exists( 'MTTF_Settings' ) && method_exists( 'MTTF_Settings', 'get_hero_popular_tuyen_terms' ) ) {
+		foreach ( MTTF_Settings::get_hero_popular_tuyen_terms() as $term ) {
+			if ( ! $term instanceof WP_Term ) {
+				continue;
+			}
+			$push_term( $term );
+			if ( count( $items ) >= $limit ) {
+				return $items;
+			}
+		}
+	}
+
+	// 2) Các tuyến có nhiều card tuyen_xe đang kích hoạt nhất.
+	$all_terms = get_terms(
+		array(
+			'taxonomy'   => $taxonomy,
+			'hide_empty' => false,
+			'orderby'    => 'name',
+			'order'      => 'ASC',
+		)
 	);
 
-	foreach ( $routes as $route ) {
-		$route_id = (int) $route->ID;
-		$title = get_the_title( $route_id );
-		if ( '' === $title ) {
+	if ( is_wp_error( $all_terms ) ) {
+		$all_terms = array();
+	}
+
+	$by_active_count = array();
+	foreach ( $all_terms as $term ) {
+		if ( ! $term instanceof WP_Term || isset( $used_ids[ (int) $term->term_id ] ) ) {
 			continue;
 		}
 
-		$route_slug = (string) get_post_meta( $route_id, '_mttf_route_slug', true );
-		$url        = '' !== $route_slug ? add_query_arg( 'route', sanitize_title( $route_slug ), home_url( '/' ) ) : get_permalink( $route_id );
+		$active_count = dxvn_count_active_routes_for_tuyen_term( $term );
+		if ( $active_count > 0 ) {
+			$by_active_count[] = array(
+				'term'  => $term,
+				'count' => $active_count,
+			);
+		}
+	}
 
-		$items[] = array(
-			'text' => $title,
-			'url'  => $url ? $url : '#',
-		);
+	usort(
+		$by_active_count,
+		static function ( $a, $b ) {
+			if ( $a['count'] !== $b['count'] ) {
+				return $b['count'] <=> $a['count'];
+			}
+
+			return strcasecmp( $a['term']->name, $b['term']->name );
+		}
+	);
+
+	foreach ( $by_active_count as $row ) {
+		$push_term( $row['term'] );
+		if ( count( $items ) >= $limit ) {
+			return $items;
+		}
+	}
+
+	// 3) Fallback: term tuyến mới nhất (có link landing hợp lệ).
+	usort(
+		$all_terms,
+		static function ( $a, $b ) {
+			return (int) $b->term_id <=> (int) $a->term_id;
+		}
+	);
+
+	foreach ( $all_terms as $term ) {
+		if ( ! $term instanceof WP_Term ) {
+			continue;
+		}
+		$push_term( $term );
+		if ( count( $items ) >= $limit ) {
+			break;
+		}
 	}
 
 	return $items;
@@ -1164,6 +1370,7 @@ function dxvn_render_footer_settings_page() {
 								?>
 								<div class="dxvn-partner-row">
 									<input type="hidden" class="dxvn-partner-image-id" name="<?php echo esc_attr( 'dxvn_footer_settings[partners][' . $index . '][image_id]' ); ?>" value="<?php echo esc_attr( (string) $image_id ); ?>" />
+									<input type="hidden" class="dxvn-partner-image-url" name="<?php echo esc_attr( 'dxvn_footer_settings[partners][' . $index . '][image_url]' ); ?>" value="<?php echo esc_attr( $image_id ? (string) wp_get_attachment_url( $image_id ) : '' ); ?>" />
 									<div class="dxvn-partner-preview-wrap">
 										<img class="dxvn-partner-preview" src="<?php echo esc_url( $image_url ); ?>" alt="" <?php echo $image_url ? '' : 'style="display:none;"'; ?> />
 									</div>
@@ -1217,8 +1424,15 @@ function dxvn_render_footer_settings_page() {
 					<td><input id="dxvn_footer_services_title" type="text" class="regular-text" name="dxvn_footer_settings[services_title]" value="<?php echo esc_attr( $settings['services_title'] ); ?>" /></td>
 				</tr>
 				<tr>
-					<th scope="row"><label for="dxvn_footer_services_items">Danh sách dịch vụ</label></th>
-					<td><textarea id="dxvn_footer_services_items" class="large-text code" rows="7" name="dxvn_footer_settings[services_items]"><?php echo esc_textarea( $settings['services_items'] ); ?></textarea></td>
+					<th scope="row">Danh sách dịch vụ</th>
+					<td>
+						<p class="description" style="max-width:640px;">
+							Cột <strong>Dịch vụ phổ biến</strong> lấy tự động từ taxonomy <code>mttf_tuyen</code>
+							(dạng «Đặt vé xe {Tên tuyến}» → <code>/tuyen/{slug}/</code>, tối đa 8 tuyến).
+							Thứ tự ưu tiên: tuyến chọn ở <strong>Tuyến xe → Cài đặt → Hero trang chủ → Tuyến phổ biến</strong>,
+							sau đó các tuyến có nhiều card <code>tuyen_xe</code> đang kích hoạt nhất.
+						</p>
+					</td>
 				</tr>
 				<tr>
 					<th scope="row"><label for="dxvn_footer_about_title">Tiêu đề cột giới thiệu</label></th>
@@ -1284,7 +1498,6 @@ function dxvn_enqueue_footer_code_editor( $hook ) {
 	$textarea_ids = array(
 		'dxvn_footer_brand_contact_items',
 		'dxvn_footer_office_items',
-		'dxvn_footer_services_items',
 		'dxvn_footer_about_items',
 		'dxvn_footer_support_items',
 	);
@@ -1307,6 +1520,7 @@ jQuery(function($){
 		return $(
 			'<div class="dxvn-partner-row">' +
 				'<input type="hidden" class="dxvn-partner-image-id" name="dxvn_footer_settings[partners][' + index + '][image_id]" value="" />' +
+				'<input type="hidden" class="dxvn-partner-image-url" name="dxvn_footer_settings[partners][' + index + '][image_url]" value="" />' +
 				'<div class="dxvn-partner-preview-wrap"><img class="dxvn-partner-preview" src="" alt="" style="display:none;" /></div>' +
 				'<div class="dxvn-partner-fields">' +
 					'<p><button type="button" class="button dxvn-partner-select-image">Chọn ảnh</button> <button type="button" class="button-link-delete dxvn-partner-clear-image">Xóa ảnh</button></p>' +
@@ -1330,6 +1544,7 @@ jQuery(function($){
 	$list.on("click", ".dxvn-partner-clear-image", function(){
 		var $row = $(this).closest(".dxvn-partner-row");
 		$row.find(".dxvn-partner-image-id").val("");
+		$row.find(".dxvn-partner-image-url").val("");
 		$row.find(".dxvn-partner-preview").attr("src","").hide();
 	});
 
@@ -1344,6 +1559,7 @@ jQuery(function($){
 		frame.on("select", function(){
 			var attachment = frame.state().get("selection").first().toJSON();
 			$row.find(".dxvn-partner-image-id").val(attachment.id || "");
+			$row.find(".dxvn-partner-image-url").val(attachment.url || "");
 			$row.find(".dxvn-partner-preview").attr("src", attachment.url || "").show();
 		});
 
@@ -1358,16 +1574,6 @@ add_filter( 'generate_show_title', 'dxvn_hide_homepage_title' );
 function dxvn_hide_homepage_title( $show ) {
 	if ( is_front_page() && is_page() ) {
 		return false;
-	}
-
-	if ( is_page() ) {
-		$post = get_queried_object();
-		if ( $post instanceof WP_Post ) {
-			$has_route_shortcode = has_shortcode( (string) $post->post_content, 'mttf_route' ) || has_shortcode( (string) $post->post_content, 'mttf_route_directory' );
-			if ( 'route' === $post->post_name || $has_route_shortcode ) {
-				return false;
-			}
-		}
 	}
 
 	return $show;

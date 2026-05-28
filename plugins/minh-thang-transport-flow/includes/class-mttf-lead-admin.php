@@ -27,7 +27,7 @@ class MTTF_Lead_Admin {
 
 	public static function add_menu() {
 		add_submenu_page(
-			'edit.php?post_type=' . MTTF_CPT::get_article_post_type(),
+			'edit.php?post_type=tuyen_xe',
 			'Lead & thống kê',
 			'Lead',
 			'manage_options',
@@ -123,7 +123,7 @@ class MTTF_Lead_Admin {
 
 		$routes = get_posts(
 			array(
-				'post_type'      => MTTF_CPT::get_article_post_type(),
+				'post_type'      => 'tuyen_xe',
 				'post_status'    => array( 'publish', 'draft' ),
 				'posts_per_page' => 600,
 				'orderby'        => 'title',
@@ -137,7 +137,7 @@ class MTTF_Lead_Admin {
 		$list->prepare_items();
 
 		$export_args = array(
-			'post_type'         => MTTF_CPT::get_article_post_type(),
+			'post_type'         => 'tuyen_xe',
 			'page'              => 'mttf-leads',
 			'mttf_export_csv'   => '1',
 		);
@@ -155,7 +155,7 @@ class MTTF_Lead_Admin {
 		echo '<h1>Lead đặt tuyến (MTTF)</h1>';
 
 		echo '<form method="get" id="mttf-leads-form" action="' . esc_url( admin_url( 'edit.php' ) ) . '">';
-		echo '<input type="hidden" name="post_type" value="' . esc_attr( MTTF_CPT::get_article_post_type() ) . '">';
+		echo '<input type="hidden" name="post_type" value="tuyen_xe">';
 		echo '<input type="hidden" name="page" value="mttf-leads">';
 		echo '<div style="display:flex;align-items:flex-end;gap:10px;margin:16px 0 14px;flex-wrap:wrap;">';
 		echo '<label><span>Tuyến:</span>&nbsp;<select name="route_id">';

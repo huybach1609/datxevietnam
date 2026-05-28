@@ -32,7 +32,7 @@ class MTTF_Settings {
 	 * @return string
 	 */
 	public static function ensure_settings_default_tab_in_menu( $submenu_file, $parent_file ) {
-		if ( 'edit.php?post_type=' . MTTF_CPT::get_article_post_type() !== $parent_file ) {
+		if ( 'edit.php?post_type=tuyen_xe' !== $parent_file ) {
 			return $submenu_file;
 		}
 		$f = (string) $submenu_file;
@@ -50,13 +50,13 @@ class MTTF_Settings {
 				'page' => 'mttf-settings',
 				'tab'  => 'lead',
 			),
-			'edit.php?post_type=' . MTTF_CPT::get_article_post_type()
+			'edit.php?post_type=tuyen_xe'
 		);
 	}
 
 	public static function add_settings_page() {
 		add_submenu_page(
-			'edit.php?post_type=' . MTTF_CPT::get_article_post_type(),
+			'edit.php?post_type=tuyen_xe',
 			'Cài đặt MTTF',
 			'Cài đặt',
 			'manage_options',
@@ -292,37 +292,37 @@ class MTTF_Settings {
 
 		add_settings_field(
 			'hero_title_1',
-			'Dòng tiêu đề 1',
+			'Badge hero',
 			array( __CLASS__, 'render_input' ),
 			self::SETTINGS_PAGE_HERO,
 			'mttf_hero_section',
 			array(
 				'key'         => 'hero_title_1',
-				'placeholder' => 'Nền tảng Đặt Vé Xe toàn Việt Nam',
+				'placeholder' => 'Nền tảng đặt xe chọn lọc toàn Việt Nam',
 			)
 		);
 
 		add_settings_field(
 			'hero_title_2',
-			'Dòng tiêu đề 2',
+			'Tiêu đề H1',
 			array( __CLASS__, 'render_input' ),
 			self::SETTINGS_PAGE_HERO,
 			'mttf_hero_section',
 			array(
 				'key'         => 'hero_title_2',
-				'placeholder' => 'Nhanh chóng. Minh bạch. Cam kết có chỗ.',
+				'placeholder' => 'Đặt xe minh bạch, chọn đúng nhà xe cho hành trình của bạn',
 			)
 		);
 
 		add_settings_field(
 			'hero_title_3',
-			'Dòng tiêu đề 3',
+			'Mô tả hero',
 			array( __CLASS__, 'render_input' ),
 			self::SETTINGS_PAGE_HERO,
 			'mttf_hero_section',
 			array(
 				'key'         => 'hero_title_3',
-				'placeholder' => 'Nhập tỉnh hoặc thành phố để lọc nhanh',
+				'placeholder' => 'Tra cứu tuyến xe, nhà xe, giá tham khảo và tiện ích trước khi đặt...',
 			)
 		);
 
@@ -339,51 +339,11 @@ class MTTF_Settings {
 		);
 
 		add_settings_field(
-			'route_section_title_bac',
-			'Tiêu đề section miền Bắc',
-			array( __CLASS__, 'render_input' ),
+			'hero_popular_tuyen_ids',
+			'Tuyến phổ biến (hero)',
+			array( __CLASS__, 'render_hero_popular_tuyen' ),
 			self::SETTINGS_PAGE_HERO,
-			'mttf_hero_section',
-			array(
-				'key'         => 'route_section_title_bac',
-				'placeholder' => 'Gợi ý tuyến miền Bắc cho bạn',
-			)
-		);
-
-		add_settings_field(
-			'route_section_title_trung',
-			'Tiêu đề section miền Trung',
-			array( __CLASS__, 'render_input' ),
-			self::SETTINGS_PAGE_HERO,
-			'mttf_hero_section',
-			array(
-				'key'         => 'route_section_title_trung',
-				'placeholder' => 'Gợi ý tuyến miền Trung cho bạn',
-			)
-		);
-
-		add_settings_field(
-			'route_section_title_nam',
-			'Tiêu đề section miền Nam',
-			array( __CLASS__, 'render_input' ),
-			self::SETTINGS_PAGE_HERO,
-			'mttf_hero_section',
-			array(
-				'key'         => 'route_section_title_nam',
-				'placeholder' => 'Gợi ý tuyến miền Nam cho bạn',
-			)
-		);
-
-		add_settings_field(
-			'route_section_title_default',
-			'Tiêu đề section mặc định',
-			array( __CLASS__, 'render_input' ),
-			self::SETTINGS_PAGE_HERO,
-			'mttf_hero_section',
-			array(
-				'key'         => 'route_section_title_default',
-				'placeholder' => 'Gợi ý tuyến phù hợp cho bạn',
-			)
+			'mttf_hero_section'
 		);
 
 		add_settings_section(
@@ -469,10 +429,7 @@ class MTTF_Settings {
 			'hero_title_2'                             => '',
 			'hero_title_3'                             => '',
 			'hero_background_url'                       => '',
-			'route_section_title_bac'                  => '',
-			'route_section_title_trung'                => '',
-			'route_section_title_nam'                  => '',
-			'route_section_title_default'              => '',
+			'hero_popular_tuyen_ids'                    => array(),
 			'enable_spam_protection'                   => 1,
 			'lead_lock_seconds'                        => 45,
 			'enable_activity_pings'                     => 1,
@@ -502,7 +459,7 @@ class MTTF_Settings {
 		$out = array_merge( self::default_option_values(), $prev );
 
 		if ( array_key_exists( 'lead_email', $input ) ) {
-			$out['lead_email'] = sanitize_email( $input['lead_email'] );
+			$out['lead_email'] = sanitize_text_field( $input['lead_email'] );
 		}
 		if ( array_key_exists( 'fallback_hotline', $input ) ) {
 			$out['fallback_hotline'] = sanitize_text_field( $input['fallback_hotline'] );
@@ -525,17 +482,8 @@ class MTTF_Settings {
 		if ( array_key_exists( 'hero_background_url', $input ) ) {
 			$out['hero_background_url'] = esc_url_raw( $input['hero_background_url'] );
 		}
-		if ( array_key_exists( 'route_section_title_bac', $input ) ) {
-			$out['route_section_title_bac'] = sanitize_text_field( $input['route_section_title_bac'] );
-		}
-		if ( array_key_exists( 'route_section_title_trung', $input ) ) {
-			$out['route_section_title_trung'] = sanitize_text_field( $input['route_section_title_trung'] );
-		}
-		if ( array_key_exists( 'route_section_title_nam', $input ) ) {
-			$out['route_section_title_nam'] = sanitize_text_field( $input['route_section_title_nam'] );
-		}
-		if ( array_key_exists( 'route_section_title_default', $input ) ) {
-			$out['route_section_title_default'] = sanitize_text_field( $input['route_section_title_default'] );
+		if ( array_key_exists( 'hero_popular_tuyen_ids', $input ) ) {
+			$out['hero_popular_tuyen_ids'] = self::sanitize_hero_popular_tuyen_ids( $input['hero_popular_tuyen_ids'] );
 		}
 		if ( array_key_exists( 'enable_spam_protection', $input ) ) {
 			$out['enable_spam_protection'] = empty( $input['enable_spam_protection'] ) ? 0 : 1;
@@ -630,6 +578,163 @@ class MTTF_Settings {
 				<?php endif; ?>
 			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * @param mixed $raw Comma-separated string or array of term IDs.
+	 * @return int[]
+	 */
+	public static function sanitize_hero_popular_tuyen_ids( $raw ) {
+		if ( is_array( $raw ) ) {
+			$ids = array_map( 'absint', $raw );
+		} else {
+			$ids = array_filter( array_map( 'absint', explode( ',', (string) $raw ) ) );
+		}
+
+		$valid = array();
+		foreach ( $ids as $term_id ) {
+			if ( $term_id <= 0 ) {
+				continue;
+			}
+			$term = get_term( $term_id, MTTF_Landing_Taxonomies::TAX_TUYEN );
+			if ( $term instanceof WP_Term && ! is_wp_error( $term ) ) {
+				$valid[] = $term_id;
+			}
+		}
+
+		return array_values( array_unique( $valid ) );
+	}
+
+	/**
+	 * Tuyến phổ biến hero trang chủ (theo thứ tự admin chọn).
+	 *
+	 * @return WP_Term[]
+	 */
+	public static function get_hero_popular_tuyen_terms() {
+		$stored = self::get( 'hero_popular_tuyen_ids', array() );
+		if ( is_string( $stored ) && '' !== $stored ) {
+			$ids = self::sanitize_hero_popular_tuyen_ids( $stored );
+		} elseif ( is_array( $stored ) ) {
+			$ids = self::sanitize_hero_popular_tuyen_ids( $stored );
+		} else {
+			$ids = array();
+		}
+
+		if ( empty( $ids ) ) {
+			return array();
+		}
+
+		$terms = array();
+		foreach ( $ids as $term_id ) {
+			$term = get_term( (int) $term_id, MTTF_Landing_Taxonomies::TAX_TUYEN );
+			if ( $term instanceof WP_Term && ! is_wp_error( $term ) ) {
+				$terms[] = $term;
+			}
+		}
+
+		return $terms;
+	}
+
+	/**
+	 * Settings field: chọn & sắp xếp tuyến phổ biến trên hero.
+	 */
+	public static function render_hero_popular_tuyen() {
+		$selected_ids = self::sanitize_hero_popular_tuyen_ids( self::get( 'hero_popular_tuyen_ids', array() ) );
+		$all_terms    = get_terms(
+			array(
+				'taxonomy'   => MTTF_Landing_Taxonomies::TAX_TUYEN,
+				'hide_empty' => false,
+				'orderby'    => 'name',
+				'order'      => 'ASC',
+			)
+		);
+		if ( is_wp_error( $all_terms ) ) {
+			$all_terms = array();
+		}
+
+		$terms_by_id = array();
+		foreach ( $all_terms as $term ) {
+			if ( $term instanceof WP_Term ) {
+				$terms_by_id[ (int) $term->term_id ] = $term;
+			}
+		}
+		?>
+		<div class="mttf-hero-popular-picker">
+			<p class="description" style="max-width:640px;">
+				Chọn tuyến từ taxonomy <strong>Tuyến (landing)</strong>. Kéo thả để sắp xếp thứ tự chip trên hero trang chủ.
+				Link chip trỏ tới trang <code>/tuyen/{slug}/</code>. Nếu không chọn tuyến nào, khối «Tuyến phổ biến» sẽ ẩn trên trang chủ.
+			</p>
+			<?php if ( empty( $all_terms ) ) : ?>
+				<p><em>Chưa có tuyến nào. Hãy thêm term tại menu «Tuyến landing» trước.</em></p>
+			<?php else : ?>
+				<p class="mttf-hero-popular-picker__toolbar">
+					<select class="mttf-hero-popular-picker__add-select">
+						<option value=""><?php esc_html_e( '— Chọn tuyến để thêm —', 'minh-thang-transport-flow' ); ?></option>
+						<?php foreach ( $all_terms as $term ) : ?>
+							<?php
+							$opt_link = get_term_link( $term );
+							if ( is_wp_error( $opt_link ) ) {
+								$opt_link = '';
+							}
+							?>
+							<option
+								value="<?php echo esc_attr( (string) $term->term_id ); ?>"
+								<?php echo '' !== $opt_link ? ' data-preview-url="' . esc_attr( $opt_link ) . '"' : ''; ?>
+							><?php echo esc_html( $term->name ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<button type="button" class="button mttf-hero-popular-picker__add-btn"><?php esc_html_e( 'Thêm tuyến', 'minh-thang-transport-flow' ); ?></button>
+				</p>
+			<?php endif; ?>
+			<ul class="mttf-hero-popular-picker__list">
+				<?php foreach ( $selected_ids as $term_id ) : ?>
+					<?php
+					if ( ! isset( $terms_by_id[ $term_id ] ) ) {
+						continue;
+					}
+					$term = $terms_by_id[ $term_id ];
+					$link = get_term_link( $term );
+					if ( is_wp_error( $link ) ) {
+						$link = '';
+					}
+					?>
+					<li class="mttf-hero-popular-picker__item" data-term-id="<?php echo esc_attr( (string) $term->term_id ); ?>">
+						<span class="mttf-hero-popular-picker__handle dashicons dashicons-menu" aria-hidden="true"></span>
+						<span class="mttf-hero-popular-picker__name"><?php echo esc_html( $term->name ); ?></span>
+						<?php if ( '' !== $link ) : ?>
+							<a class="mttf-hero-popular-picker__preview" href="<?php echo esc_url( $link ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Xem', 'minh-thang-transport-flow' ); ?></a>
+						<?php endif; ?>
+						<button type="button" class="button-link-delete mttf-hero-popular-picker__remove" aria-label="<?php esc_attr_e( 'Xóa', 'minh-thang-transport-flow' ); ?>"><?php esc_html_e( 'Xóa', 'minh-thang-transport-flow' ); ?></button>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+			<input
+				type="hidden"
+				class="mttf-hero-popular-picker__ids"
+				name="<?php echo esc_attr( self::OPTION_KEY . '[hero_popular_tuyen_ids]' ); ?>"
+				value="<?php echo esc_attr( implode( ',', $selected_ids ) ); ?>"
+			/>
+		</div>
+		<style>
+			.mttf-hero-popular-picker__list { max-width: 520px; margin: 12px 0 0; padding: 0; list-style: none; }
+			.mttf-hero-popular-picker__item {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				margin: 0 0 6px;
+				padding: 10px 12px;
+				background: #fff;
+				border: 1px solid #c3c4c7;
+				border-radius: 6px;
+				cursor: move;
+			}
+			.mttf-hero-popular-picker__handle { color: #787c82; cursor: grab; }
+			.mttf-hero-popular-picker__name { flex: 1; font-weight: 600; }
+			.mttf-hero-popular-picker__preview { font-size: 12px; }
+			.mttf-hero-popular-picker__toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+			.mttf-hero-popular-picker__add-select { min-width: 280px; max-width: 100%; }
+		</style>
 		<?php
 	}
 
@@ -914,15 +1019,16 @@ class MTTF_Settings {
 	}
 
 	public static function enqueue_assets( $hook ) {
-		if ( MTTF_CPT::get_article_post_type() . '_page_mttf-settings' !== $hook ) {
+		if ( 'tuyen_xe_page_mttf-settings' !== $hook ) {
 			return;
 		}
 
 		wp_enqueue_media();
+		wp_enqueue_script( 'jquery-ui-sortable' );
 		wp_enqueue_script(
 			'mttf-admin-settings',
 			MTTF_URL . 'assets/js/admin-settings.js',
-			array( 'jquery' ),
+			array( 'jquery', 'jquery-ui-sortable' ),
 			MTTF_VERSION,
 			true
 		);
@@ -937,7 +1043,7 @@ class MTTF_Settings {
 		$tab = sanitize_key( $tab );
 		return add_query_arg(
 			array(
-				'post_type' => MTTF_CPT::get_article_post_type(),
+				'post_type' => 'tuyen_xe',
 				'page'      => 'mttf-settings',
 				'tab'       => $tab,
 			),
@@ -1081,7 +1187,7 @@ class MTTF_Settings {
 
 		$route_ids = get_posts(
 			array(
-				'post_type'      => MTTF_CPT::get_article_post_type(),
+				'post_type'      => 'tuyen_xe',
 				'post_status'    => 'any',
 				'posts_per_page' => -1,
 				'fields'         => 'ids',
@@ -1096,7 +1202,7 @@ class MTTF_Settings {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'post_type'               => MTTF_CPT::get_article_post_type(),
+					'post_type'               => 'tuyen_xe',
 					'page'                    => 'mttf-settings',
 					'tab'                     => 'lead',
 					'mttf_search_stats_reset' => '1',
@@ -1110,7 +1216,7 @@ class MTTF_Settings {
 	private static function get_route_search_stats() {
 		$route_ids = get_posts(
 			array(
-				'post_type'      => MTTF_CPT::get_article_post_type(),
+				'post_type'      => 'tuyen_xe',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
 				'fields'         => 'ids',

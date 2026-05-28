@@ -20,6 +20,8 @@ languages
 plugins/floating-contact-dock
 plugins/gtranslate
 plugins/wp-smtp
+plugins/catfolders
+plugins/mt-contact-bar
 
 
 languages

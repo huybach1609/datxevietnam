@@ -74,37 +74,28 @@
     }
 
     var card = el.closest(".mttf-card");
-    var page = el.closest(".mttf-route-page");
     window.dataLayer.push({
       event: "mttf_" + (el.dataset.trackEvent || "click"),
-      cta_label: el.dataset.trackLabel || (el.textContent || "").trim(),
-      page_type: (page && page.dataset.pageType) || "",
       route_id: (card && card.dataset.routeId) || "",
       route_slug: (card && card.dataset.routeSlug) || "",
-      operator_id: (card && card.dataset.operatorId) || (page && page.dataset.operatorId) || "",
-      operator_slug: (card && card.dataset.operatorSlug) || (page && page.dataset.operatorSlug) || "",
     });
   }
 
-  function initLeadCaptureForm(form, options) {
-    if (!form) return null;
+  function initModal() {
+    var modal = document.getElementById("mttf-modal");
+    if (!modal) return;
 
-    var config = options || {};
-    var statusEl = config.statusEl || form.querySelector("[data-mttf-status]");
-    var intlToggleBtn = config.intlToggleBtn || form.querySelector("[data-mttf-intl-toggle]");
-    var intlFields = config.intlFields || form.querySelector("[data-mttf-intl-fields]");
+    var routeNameEl = modal.querySelector("[data-mttf-route-name]");
+    var titleEl = modal.querySelector("[data-mttf-title]");
+    var routeImageEl = modal.querySelector("[data-mttf-route-image]");
+    var form = modal.querySelector(".mttf-lead-form");
+    var statusEl = modal.querySelector("[data-mttf-status]");
+    var intlToggleBtn = modal.querySelector("[data-mttf-intl-toggle]");
+    var intlFields = modal.querySelector("[data-mttf-intl-fields]");
     var submitBtn = form.querySelector('button[type="submit"]');
     var submitDefaultText = submitBtn ? submitBtn.textContent : "Gửi";
-    var routeSelect = form.querySelector("[data-mttf-route-select]");
     var cooldownTimer = null;
-    var cooldownKey = config.cooldownKey || "mttf_lead_cooldown_until";
-
-    function setFieldValue(name, value) {
-      var field = form.querySelector('[name="' + name + '"]');
-      if (field) {
-        field.value = value || "";
-      }
-    }
+    var cooldownKey = "mttf_lead_cooldown_until";
 
     function getCooldownLeftSeconds() {
       var until = parseInt(safeStorageGet(cooldownKey) || "0", 10);
@@ -168,41 +159,60 @@
       }
     }
 
-    function syncSelectedRoute() {
-      if (!routeSelect) return;
-      var selectedOption = routeSelect.options[routeSelect.selectedIndex];
-      if (!selectedOption) return;
-
-      if (
-        selectedOption.dataset.routeId ||
-        selectedOption.dataset.routeTitle ||
-        selectedOption.dataset.routeSlug ||
-        selectedOption.dataset.routeRegion
-      ) {
-        setFieldValue("route_id", selectedOption.dataset.routeId || selectedOption.value || "");
-        setFieldValue("route_title", selectedOption.dataset.routeTitle || selectedOption.textContent || "");
-        setFieldValue("route_slug", selectedOption.dataset.routeSlug || "");
-        setFieldValue("route_region", selectedOption.dataset.routeRegion || "");
+    function openFromCard(card) {
+      if (!card) return;
+      form.route_id.value = card.dataset.routeId || "";
+      form.route_title.value = card.dataset.routeTitle || "";
+      form.route_slug.value = card.dataset.routeSlug || "";
+      form.route_region.value = card.dataset.routeRegion || "";
+      routeNameEl.textContent = "Tuyến bạn chọn: " + (card.dataset.routeTitle || "");
+      if (titleEl) {
+        titleEl.textContent = "Bạn cần xe đi " + (card.dataset.routeTitle || "tuyến này") + "?";
       }
-
-      if (
-        selectedOption.dataset.operatorId ||
-        selectedOption.dataset.operatorName ||
-        selectedOption.dataset.operatorSlug
-      ) {
-        setFieldValue("operator_id", selectedOption.dataset.operatorId || "");
-        setFieldValue("operator_name", selectedOption.dataset.operatorName || selectedOption.textContent || "");
-        setFieldValue("operator_slug", selectedOption.dataset.operatorSlug || "");
+      if (routeImageEl) {
+        routeImageEl.src = card.dataset.routeImage || "";
+        routeImageEl.alt = card.dataset.routeTitle || "Ảnh tuyến xe";
       }
-
-      if (typeof config.onRouteChange === "function") {
-        config.onRouteChange(selectedOption);
-      }
+      setInternationalFieldsVisible(false);
+      setStatus("");
+      renderCooldown();
+      modal.hidden = false;
     }
 
-    if (routeSelect) {
-      routeSelect.addEventListener("change", syncSelectedRoute);
-    }
+    document.addEventListener("click", function (event) {
+      var target = getSafeTarget(event);
+      if (!target || !target.closest) {
+        return;
+      }
+
+      var clickedInsideCard = target.closest(".mttf-card");
+      if (!clickedInsideCard) {
+        return;
+      }
+
+      var modalTrigger = target.closest(".mttf-open-modal");
+      if (modalTrigger) {
+        event.preventDefault();
+        openFromCard(clickedInsideCard);
+        return;
+      }
+
+      if (target.closest(".mttf-btn")) {
+        return;
+      }
+
+      if (target.closest("#mttf-modal")) {
+        return;
+      }
+
+      openFromCard(clickedInsideCard);
+    });
+
+    document.querySelectorAll(".mttf-close-modal").forEach(function (closer) {
+      closer.addEventListener("click", function () {
+        modal.hidden = true;
+      });
+    });
 
     if (intlToggleBtn) {
       intlToggleBtn.addEventListener("click", function () {
@@ -213,18 +223,11 @@
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
-      syncSelectedRoute();
       if (getCooldownLeftSeconds() > 0) {
         setStatus("Bạn đang trong thời gian chờ, vui lòng thử lại sau.", "error");
         renderCooldown();
         return;
       }
-
-      if (!form.querySelector('[name="route_id"]') || !form.querySelector('[name="route_id"]').value) {
-        setStatus("Vui lòng chọn tuyến cần tư vấn.", "error");
-        return;
-      }
-
       setStatus("Đang gửi...", "loading");
       if (submitBtn) submitBtn.disabled = true;
 
@@ -248,8 +251,20 @@
           return response.json();
         })
         .then(function (json) {
+          if (!json || typeof json.success === "undefined") {
+            setStatus(
+              "Gửi thông tin chưa thành công, vui lòng thử lại hoặc liên hệ Zalo.",
+              "error"
+            );
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
           if (!json.success) {
-            setStatus((json.data && json.data.message) || "Gửi thất bại.", "error");
+            setStatus(
+              (json.data && json.data.message) ||
+                "Gửi thông tin chưa thành công, vui lòng thử lại hoặc liên hệ Zalo.",
+              "error"
+            );
             if (json.data && json.data.retry_after) {
               setCooldown(json.data.retry_after);
             } else if (submitBtn) {
@@ -257,14 +272,11 @@
             }
             return;
           }
-
           setStatus(
             "Chuyên viên của chúng tôi sẽ gọi lại cho bạn ngay. Vui lòng để chuông điện thoại!",
             "success"
           );
-          if (form.phone) {
-            form.phone.value = "";
-          }
+          form.phone.value = "";
           var cooldownSeconds =
             json &&
             json.data &&
@@ -272,7 +284,6 @@
               ? parseInt(json.data.cooldown_seconds, 10)
               : 45;
           setCooldown(cooldownSeconds);
-
           if (
             typeof window.__mttfApplyActivityPing === "function" &&
             json &&
@@ -282,19 +293,20 @@
           ) {
             window.__mttfApplyActivityPing(json.data.activity_ping);
           }
-
           var mMeas = window.mttfData && window.mttfData.measurement;
-          if (window.dataLayer && mMeas && parseInt(mMeas.enabled, 10) === 1) {
+          if (
+            window.dataLayer &&
+            mMeas &&
+            parseInt(mMeas.enabled, 10) === 1
+          ) {
             var evName =
               (mMeas.eventName &&
                 String(mMeas.eventName).replace(/^\s+|\s+$/g, "")) ||
               "mttf_lead_submit";
-            var routeIdField = form.querySelector('[name="route_id"]');
-            var routeSlugField = form.querySelector('[name="route_slug"]');
             var basePayload = {
               event: evName,
-              route_id: routeIdField ? routeIdField.value : "",
-              route_slug: routeSlugField ? routeSlugField.value : "",
+              route_id: form.route_id.value,
+              route_slug: form.route_slug.value,
             };
             window.dataLayer.push(basePayload);
             if (parseInt(mMeas.duplicateGa4, 10) === 1) {
@@ -305,182 +317,21 @@
               });
             }
           }
-
-          if (typeof config.onSuccess === "function") {
-            config.onSuccess(json);
-          }
         })
         .catch(function () {
-          setStatus("Không thể gửi lúc này. Thử lại sau.", "error");
+          setStatus(
+            "Gửi thông tin chưa thành công, vui lòng thử lại hoặc liên hệ Zalo.",
+            "error"
+          );
           if (submitBtn) submitBtn.disabled = false;
         });
     });
 
-    syncSelectedRoute();
     renderCooldown();
     setInternationalFieldsVisible(false);
     if (getCooldownLeftSeconds() > 0 && !cooldownTimer) {
       cooldownTimer = setInterval(renderCooldown, 1000);
     }
-
-    return {
-      setStatus: setStatus,
-      renderCooldown: renderCooldown,
-      setInternationalFieldsVisible: setInternationalFieldsVisible,
-      setCooldown: setCooldown,
-      syncSelectedRoute: syncSelectedRoute,
-    };
-  }
-
-  function initModal() {
-    var modal = document.getElementById("mttf-modal");
-    if (!modal) return;
-
-    var routeNameEl = modal.querySelector("[data-mttf-route-name]");
-    var titleEl = modal.querySelector("[data-mttf-title]");
-    var routeImageEl = modal.querySelector("[data-mttf-route-image]");
-    var form = modal.querySelector(".mttf-lead-form");
-    var formApi = initLeadCaptureForm(form);
-    var modalContent = modal.querySelector(".mttf-modal__content");
-    var closeTimer = null;
-
-    function showModal() {
-      if (closeTimer) {
-        clearTimeout(closeTimer);
-        closeTimer = null;
-      }
-
-      modal.hidden = false;
-      modal.classList.remove("is-closing");
-      window.requestAnimationFrame(function () {
-        modal.classList.add("is-open");
-      });
-    }
-
-    function hideModal() {
-      if (modal.hidden || modal.classList.contains("is-closing")) {
-        return false;
-      }
-
-      modal.classList.remove("is-open");
-      modal.classList.add("is-closing");
-      return true;
-    }
-
-    function finishHideModal() {
-      if (!modal.classList.contains("is-closing")) {
-        return;
-      }
-
-      modal.hidden = true;
-      modal.classList.remove("is-closing");
-      if (closeTimer) {
-        clearTimeout(closeTimer);
-        closeTimer = null;
-      }
-    }
-
-    if (modalContent) {
-      modalContent.addEventListener("transitionend", function (event) {
-        if (event.target === modalContent && event.propertyName === "transform") {
-          finishHideModal();
-        }
-      });
-    }
-
-    function openFromCard(card) {
-      if (!card) return;
-      var page = card.closest(".mttf-route-page");
-      form.route_id.value = card.dataset.routeId || "";
-      form.route_title.value = card.dataset.routeTitle || "";
-      form.route_slug.value = card.dataset.routeSlug || "";
-      form.route_region.value = card.dataset.routeRegion || "";
-      form.operator_id.value =
-        card.dataset.operatorId || (page && page.dataset.operatorId) || "";
-      form.operator_name.value =
-        card.dataset.operatorName || (page && page.dataset.operatorName) || "";
-      form.operator_slug.value =
-        card.dataset.operatorSlug || (page && page.dataset.operatorSlug) || "";
-      form.page_type.value = (page && page.dataset.pageType) || "";
-      routeNameEl.textContent = "Tuyến bạn chọn: " + (card.dataset.routeTitle || "");
-      if (titleEl) {
-        titleEl.textContent = "Bạn cần xe đi " + (card.dataset.routeTitle || "tuyến này") + "?";
-      }
-      if (routeImageEl) {
-        routeImageEl.src = card.dataset.routeImage || "";
-        routeImageEl.alt = card.dataset.routeTitle || "Ảnh tuyến xe";
-      }
-      if (formApi) {
-        formApi.setInternationalFieldsVisible(false);
-        formApi.setStatus("");
-        formApi.renderCooldown();
-      }
-      showModal();
-    }
-
-    document.addEventListener("click", function (event) {
-      var target = getSafeTarget(event);
-      if (!target || !target.closest) {
-        return;
-      }
-
-      var clickedInsideCard = target.closest(".mttf-card");
-      if (!clickedInsideCard) {
-        return;
-      }
-
-      var modalTrigger = target.closest(".mttf-open-modal");
-      if (modalTrigger) {
-        event.preventDefault();
-        openFromCard(clickedInsideCard);
-        return;
-      }
-
-      if (clickedInsideCard.classList.contains("mttf-route-discovery-card")) {
-        if (target.closest("a, button, input, select, textarea, label")) {
-          return;
-        }
-
-        if (clickedInsideCard.dataset.detailUrl) {
-          window.location.href = clickedInsideCard.dataset.detailUrl;
-        }
-        return;
-      }
-
-      if (
-        target.closest(".mttf-card__detail-link") ||
-        target.closest(".mttf-route-discovery-card__media-link") ||
-        target.closest(".mttf-route-discovery-card__link") ||
-        target.closest(".mttf-operator-card__link") ||
-        target.closest(".mttf-route-operator-card__link")
-      ) {
-        return;
-      }
-
-      if (target.closest(".mttf-btn")) {
-        return;
-      }
-
-      if (target.closest("#mttf-modal")) {
-        return;
-      }
-
-      openFromCard(clickedInsideCard);
-    });
-
-    document.querySelectorAll(".mttf-close-modal").forEach(function (closer) {
-      closer.addEventListener("click", function () {
-        if (hideModal()) {
-          closeTimer = setTimeout(finishHideModal, 220);
-        }
-      });
-    });
-  }
-
-  function initHeroLeadForms() {
-    document.querySelectorAll(".mttf-lead-form--hero").forEach(function (form) {
-      initLeadCaptureForm(form);
-    });
   }
 
   function initLiveSearch() {
@@ -863,10 +714,18 @@
     });
   }
 
-  function initCardSliders() {
-    document.querySelectorAll(".mttf-card__media").forEach(function (media) {
+  function initCardSlidersIn(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll(".mttf-card__media").forEach(function (media) {
+      if (media.dataset.mttfSliderInit === "1") {
+        return;
+      }
       var slides = Array.prototype.slice.call(media.querySelectorAll(".mttf-card__image"));
-      if (slides.length <= 1) return;
+      if (slides.length <= 1) {
+        return;
+      }
+
+      media.dataset.mttfSliderInit = "1";
 
       var intervalSeconds = parseInt(media.dataset.sliderInterval || "3", 10);
       if (!intervalSeconds || intervalSeconds < 1) intervalSeconds = 3;
@@ -885,210 +744,11 @@
     });
   }
 
-  function initHeroSlides() {
-    document.querySelectorAll(".mttf-directory-hero__media").forEach(function (media) {
-      var slides = Array.prototype.slice.call(media.querySelectorAll(".mttf-directory-hero__image"));
-      if (slides.length <= 1) return;
-
-      var intervalSeconds = parseInt(media.dataset.heroSlideInterval || "5", 10);
-      if (!intervalSeconds || intervalSeconds < 2) intervalSeconds = 5;
-      var intervalMs = intervalSeconds * 1000;
-
-      var currentIndex = slides.findIndex(function (slide) {
-        return slide.classList.contains("is-active");
-      });
-      if (currentIndex < 0) currentIndex = 0;
-
-      setInterval(function () {
-        slides[currentIndex].classList.remove("is-active");
-        currentIndex = (currentIndex + 1) % slides.length;
-        slides[currentIndex].classList.add("is-active");
-      }, intervalMs);
-    });
+  function initCardSliders() {
+    initCardSlidersIn(document);
   }
 
-  function initHeroDescriptionToggles() {
-    document.querySelectorAll("[data-mttf-hero-description]").forEach(function (row) {
-      var description = row.querySelector(".mttf-directory-hero__description");
-      var toggle = row.querySelector("[data-mttf-hero-description-toggle]");
-      if (!description || !toggle) return;
-
-      function syncToggleVisibility() {
-        var wasExpanded = row.classList.contains("is-expanded");
-        if (wasExpanded) {
-          row.classList.remove("is-expanded");
-        }
-
-        var isOverflowing = description.scrollWidth > description.clientWidth + 1;
-        toggle.hidden = !isOverflowing && !wasExpanded;
-
-        if (wasExpanded) {
-          row.classList.add("is-expanded");
-          toggle.hidden = false;
-        }
-      }
-
-      toggle.addEventListener("click", function () {
-        var isExpanded = row.classList.toggle("is-expanded");
-        toggle.setAttribute("aria-expanded", isExpanded ? "true" : "false");
-        toggle.textContent = isExpanded ? "Thu gọn" : "Đọc thêm";
-        if (!isExpanded) {
-          syncToggleVisibility();
-        }
-      });
-
-      syncToggleVisibility();
-      window.addEventListener("resize", syncToggleVisibility);
-    });
-  }
-
-  function initRoutePageMotion() {
-    if (
-      !("animate" in Element.prototype) ||
-      (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
-    ) {
-      return;
-    }
-
-    var pageRoots = Array.prototype.slice.call(
-      document.querySelectorAll(".mttf-route-page--route-detail, .mttf-route-page--operator-detail")
-    );
-    if (!pageRoots.length) return;
-
-    var enterEase = "cubic-bezier(0.16, 1, 0.3, 1)";
-    var softEase = "cubic-bezier(0.22, 1, 0.36, 1)";
-
-    pageRoots.forEach(function (pageRoot) {
-      var hero = pageRoot.querySelector(".mttf-directory-hero");
-      if (hero && !hero.dataset.motionPlayed) {
-        hero.dataset.motionPlayed = "true";
-
-        var overlay = hero.querySelector(".mttf-directory-hero__overlay");
-        var media = hero.querySelector(".mttf-directory-hero__media");
-        var leadCard = hero.querySelector(".mttf-directory-hero__lead-card");
-        var motionTargets = [
-          { selector: ".mttf-directory-hero__brand", y: -8, delay: 40, duration: 300 },
-          { selector: ".mttf-directory-hero__eyebrow", y: 10, delay: 90, duration: 280 },
-          { selector: ".mttf-directory-hero__title", y: 18, delay: 130, duration: 420 },
-          { selector: ".mttf-directory-hero__description-row", y: 14, delay: 190, duration: 340 },
-          { selector: ".mttf-directory-hero__summary", y: 16, delay: 230, duration: 340 },
-          { selector: ".mttf-directory-hero__actions", y: 18, delay: 270, duration: 320 },
-        ];
-
-        if (media) {
-          media.animate(
-            [
-              { opacity: 0.01, transform: "scale(1.035)" },
-              { opacity: 1, transform: "scale(1)" },
-            ],
-            {
-              duration: 560,
-              easing: enterEase,
-              fill: "both",
-            }
-          );
-        }
-
-        if (overlay) {
-          overlay.animate(
-            [
-              { opacity: 0.01 },
-              { opacity: 1 },
-            ],
-            {
-              duration: 280,
-              easing: softEase,
-              fill: "both",
-            }
-          );
-        }
-
-        motionTargets.forEach(function (item) {
-          var el = hero.querySelector(item.selector);
-          if (!el) return;
-
-          el.animate(
-            [
-              { opacity: 0.01, transform: "translate3d(0, " + item.y + "px, 0)" },
-              { opacity: 1, transform: "translate3d(0, 0, 0)" },
-            ],
-            {
-              duration: item.duration,
-              delay: item.delay,
-              easing: enterEase,
-              fill: "both",
-            }
-          );
-        });
-
-        if (leadCard) {
-          leadCard.animate(
-            [
-              { opacity: 0.01, transform: "translate3d(0, 24px, 0) scale(0.985)" },
-              { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
-            ],
-            {
-              duration: 420,
-              delay: 220,
-              easing: enterEase,
-              fill: "both",
-            }
-          );
-        }
-
-        hero.classList.add("is-motion-live");
-      }
-
-      var revealCards = Array.prototype.slice.call(pageRoot.querySelectorAll(".mttf-card"));
-      if (!revealCards.length || !("IntersectionObserver" in window)) {
-        return;
-      }
-
-      var revealObserver = new IntersectionObserver(
-        function (entries, observer) {
-          entries.forEach(function (entry) {
-            if (!entry.isIntersecting) return;
-
-            var card = entry.target;
-            if (card.dataset.motionRevealed === "true") {
-              observer.unobserve(card);
-              return;
-            }
-
-            card.dataset.motionRevealed = "true";
-            var cardIndex = parseInt(card.dataset.routePosition || "0", 10) || 0;
-            var delay = Math.min((cardIndex % 4) * 55, 165);
-
-            card.animate(
-              [
-                { opacity: 0.01, transform: "translate3d(0, 22px, 0) scale(0.985)" },
-                { opacity: 1, transform: "translate3d(0, 0, 0) scale(1)" },
-              ],
-              {
-                duration: 360,
-                delay: delay,
-                easing: enterEase,
-                fill: "both",
-              }
-            );
-
-            observer.unobserve(card);
-          });
-        },
-        {
-          root: null,
-          rootMargin: "0px 0px -10% 0px",
-          threshold: 0.16,
-        }
-      );
-
-      revealCards.forEach(function (card) {
-        if (card.dataset.motionObserved === "true") return;
-        card.dataset.motionObserved = "true";
-        revealObserver.observe(card);
-      });
-    });
-  }
+  window.mttfInitCardSlidersIn = initCardSlidersIn;
 
   function initDesktopAutoLoadCards() {
     if (window.innerWidth < 1024) {
@@ -1291,7 +951,7 @@
       if (searchInput.value && searchInput.value.trim() !== "") {
         return;
       }
-      searchInput.placeholder = places[index];
+      searchInput.placeholder = "Ví dụ: " + places[index];
       index = (index + 1) % places.length;
     }
 
@@ -1621,14 +1281,22 @@
     trackClick(trackEl);
   });
 
+  function isAdsLandingPage() {
+    return !!(
+      document.querySelector(".mttf-landing--tuyen") ||
+      document.querySelector(".mttf-landing--nha-xe")
+    );
+  }
+
   function boot() {
     setTouchData();
     initModal();
-    initHeroLeadForms();
-    initHeroSlides();
-    initHeroDescriptionToggles();
-    initRoutePageMotion();
     initCardSliders();
+
+    if (isAdsLandingPage()) {
+      return;
+    }
+
     initDesktopAutoLoadCards();
     initLiveSearch();
     initQuickRegionFilters();

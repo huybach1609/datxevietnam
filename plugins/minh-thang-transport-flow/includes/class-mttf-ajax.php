@@ -49,10 +49,6 @@ class MTTF_Ajax {
 		$route_title = sanitize_text_field( wp_unslash( $_POST['route_title'] ?? '' ) );
 		$route_slug  = sanitize_text_field( wp_unslash( $_POST['route_slug'] ?? '' ) );
 		$region      = sanitize_text_field( wp_unslash( $_POST['route_region'] ?? '' ) );
-		$operator_id   = absint( $_POST['operator_id'] ?? 0 );
-		$operator_name = sanitize_text_field( wp_unslash( $_POST['operator_name'] ?? '' ) );
-		$operator_slug = sanitize_text_field( wp_unslash( $_POST['operator_slug'] ?? '' ) );
-		$page_type     = sanitize_text_field( wp_unslash( $_POST['page_type'] ?? '' ) );
 		$source_page = esc_url_raw( wp_unslash( $_POST['source_page'] ?? '' ) );
 		$utm_data    = self::sanitize_utm_data( $_POST );
 		$contact_apps = self::sanitize_contact_apps( $_POST['contact_apps'] ?? array() );
@@ -71,42 +67,91 @@ class MTTF_Ajax {
 			self::mark_rate_limit( $phone );
 			self::mark_ip_rate_limit();
 		}
-		self::send_email( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps, $operator_id, $operator_name, $operator_slug, $page_type );
-		self::send_telegram( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps, $operator_id, $operator_name, $operator_slug, $page_type );
+
+		$lead_payload = array(
+			'route_id'     => $route_id,
+			'route_title'  => $route_title,
+			'route_slug'   => $route_slug,
+			'region'       => $region,
+			'phone'        => $phone,
+			'source_page'  => $source_page,
+			'contact_apps' => $contact_apps,
+			'utm'          => $utm_data,
+			'user_agent'   => self::get_user_agent(),
+			'client_ip'    => self::get_client_ip(),
+		);
+
+		$db_saved = false;
+		if ( class_exists( 'MTTF_Lead_DB' ) ) {
+			$db_saved = (bool) MTTF_Lead_DB::record_lead(
+				array(
+					'route_id'     => $route_id,
+					'route_title'  => $route_title,
+					'route_slug'   => $route_slug,
+					'hub_region'   => $region,
+					'phone'        => $phone,
+					'contact_apps' => implode( ', ', $contact_apps ),
+					'source_url'   => $source_page,
+					'utm'          => $utm_data,
+				)
+			);
+		}
+
+		$delivery = array(
+			'email'    => false,
+			'telegram' => false,
+		);
+		if ( class_exists( 'MTTF_Lead_Notify' ) ) {
+			$delivery = MTTF_Lead_Notify::deliver( $lead_payload );
+		}
+
+		$email_ok    = ! empty( $delivery['email'] );
+		$telegram_ok = ! empty( $delivery['telegram'] );
+		$email_wanted    = empty( $delivery['email_skipped'] );
+		$telegram_wanted = empty( $delivery['telegram_skipped'] );
+
+		$notify_ok = $email_ok || $telegram_ok;
+		$any_channel_configured = $email_wanted || $telegram_wanted;
+
+		if ( ! $notify_ok && ! $db_saved ) {
+			if ( $any_channel_configured ) {
+				wp_send_json_error(
+					array(
+						'message' => 'Gửi thông tin chưa thành công, vui lòng thử lại hoặc liên hệ Zalo.',
+					),
+					500
+				);
+			}
+
+			wp_send_json_error(
+				array(
+					'message' => 'Hệ thống chưa được cấu hình nhận lead. Vui lòng liên hệ Zalo hoặc hotline.',
+				),
+				500
+			);
+		}
+
+		if ( ! $notify_ok && $db_saved && class_exists( 'MTTF_Lead_Notify', false ) ) {
+			MTTF_Lead_Notify::log( 'Lead saved to DB but all notify channels failed.', 'error' );
+		}
 
 		do_action(
 			'mttf_lead_captured',
 			array(
-				'phone'      => $phone,
-				'route_id'   => $route_id,
-				'route_slug' => $route_slug,
-				'region'     => $region,
-				'operator_id' => $operator_id,
-				'operator_slug' => $operator_slug,
-				'page_type'  => $page_type,
-				'utm'        => $utm_data,
+				'phone'        => $phone,
+				'route_id'     => $route_id,
+				'route_slug'   => $route_slug,
+				'region'       => $region,
+				'utm'          => $utm_data,
 				'contact_apps' => $contact_apps,
+				'delivery'     => $delivery,
+				'db_saved'     => $db_saved,
 			)
 		);
 
 		$activity_ping = null;
 		if ( class_exists( 'MTTF_Activity_Pings' ) && MTTF_Activity_Pings::is_enabled() ) {
 			$activity_ping = MTTF_Activity_Pings::record_ping( $phone, $route_title );
-		}
-
-		if ( class_exists( 'MTTF_Lead_DB' ) ) {
-			MTTF_Lead_DB::record_lead(
-				array(
-					'route_id'       => $route_id,
-					'route_title'    => $route_title,
-					'route_slug'     => $route_slug,
-					'hub_region'     => $region,
-					'phone'          => $phone,
-					'contact_apps'   => implode( ', ', $contact_apps ),
-					'source_url'     => $source_page,
-					'utm'            => $utm_data,
-				)
-			);
 		}
 
 		wp_send_json_success(
@@ -136,7 +181,7 @@ class MTTF_Ajax {
 
 		$query = new WP_Query(
 			array(
-				'post_type'      => MTTF_CPT::get_article_post_type(),
+				'post_type'      => 'tuyen_xe',
 				'post_status'    => 'publish',
 				'posts_per_page' => 50,
 				's'              => $keyword,
@@ -161,7 +206,7 @@ class MTTF_Ajax {
 		check_ajax_referer( 'mttf_track_route_search', 'nonce' );
 
 		$route_id = absint( $_POST['route_id'] ?? 0 );
-		if ( $route_id <= 0 || MTTF_CPT::get_article_post_type() !== get_post_type( $route_id ) ) {
+		if ( $route_id <= 0 || 'tuyen_xe' !== get_post_type( $route_id ) ) {
 			wp_send_json_error(
 				array(
 					'message' => 'Tuyến không hợp lệ.',
@@ -180,93 +225,6 @@ class MTTF_Ajax {
 			array(
 				'route_id'      => $route_id,
 				'search_count'  => $new_count,
-			)
-		);
-	}
-
-	private static function send_email( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps, $operator_id = 0, $operator_name = '', $operator_slug = '', $page_type = '' ) {
-		$to = self::resolve_lead_email_recipients( $route_id );
-		$subject = sprintf( '[MTTF Lead] %s - %s', $route_title, $phone );
-		$message = "Lead moi tu website\n";
-		$message .= 'So dien thoai: ' . $phone . "\n";
-		$message .= 'Ứng dụng liên hệ: ' . ( ! empty( $contact_apps ) ? implode( ', ', $contact_apps ) : 'Không chọn' ) . "\n";
-		$message .= 'Tuyến: ' . $route_title . ' (' . $route_slug . ')' . "\n";
-		if ( $operator_id > 0 || '' !== $operator_name ) {
-			$message .= 'Nhà xe: ' . $operator_name . ' (' . $operator_slug . ')' . "\n";
-		}
-		$message .= 'Khu vực: ' . $region . "\n";
-		if ( '' !== $page_type ) {
-			$message .= 'Page type: ' . $page_type . "\n";
-		}
-		$message .= 'Trang: ' . $source_page . "\n";
-		$message .= 'UTM: ' . wp_json_encode( $utm_data ) . "\n";
-		$message .= 'Thời gian: ' . wp_date( 'Y-m-d H:i:s' ) . "\n";
-
-		if ( '' === $to ) {
-			return;
-		}
-
-		wp_mail( $to, $subject, $message );
-	}
-
-	/**
-	 * Recipients for lead email.
-	 *
-	 * @param int $route_id Post ID of bai_xe.
-	 * @return string Comma-separated emails or empty if none configured.
-	 */
-	private static function resolve_lead_email_recipients( $route_id ) {
-		$route_id = absint( $route_id );
-		$default_to = MTTF_Settings::get( 'lead_email', get_option( 'admin_email' ) );
-		$default_to = is_string( $default_to ) ? trim( $default_to ) : '';
-		if ( '' === $default_to ) {
-			$default_to = (string) get_option( 'admin_email' );
-		}
-
-		return (string) apply_filters( 'mttf_lead_email_to', $default_to, $route_id );
-	}
-
-	private static function send_telegram( $route_id, $phone, $route_title, $route_slug, $region, $source_page, $utm_data, $contact_apps, $operator_id = 0, $operator_name = '', $operator_slug = '', $page_type = '' ) {
-		$default_token = MTTF_Settings::get( 'telegram_bot_token', '' );
-		$token         = trim( (string) apply_filters( 'mttf_telegram_bot_token', $default_token ) );
-		if ( '' === $token ) {
-			return;
-		}
-
-		$chat_id = (string) get_post_meta( $route_id, '_mttf_telegram_chat_id', true );
-		if ( '' === $chat_id ) {
-			$region_chat_id = MTTF_Settings::get( 'telegram_chat_id_' . $region, '' );
-			$chat_id        = (string) apply_filters( 'mttf_telegram_chat_id_' . $region, $region_chat_id );
-		}
-		if ( '' === $chat_id ) {
-			$default_chat_id = MTTF_Settings::get( 'telegram_default_chat_id', '' );
-			$chat_id         = (string) apply_filters( 'mttf_telegram_default_chat_id', $default_chat_id );
-		}
-		if ( '' === $chat_id ) {
-			return;
-		}
-
-		$text  = 'Bạn nhận được 1 yêu cầu tư vấn từ xxx' . self::get_phone_last_three( $phone ) . ".\n";
-		$text .= 'Tên tuyến: ' . $route_title . "\n";
-		if ( $operator_id > 0 || '' !== $operator_name ) {
-			$text .= 'Nhà xe: ' . $operator_name . ' (' . $operator_slug . ')' . "\n";
-		}
-		if ( '' !== $page_type ) {
-			$text .= 'Page type: ' . $page_type . "\n";
-		}
-		$text .= 'SĐT: ' . $phone . "\n";
-		$text .= 'Ứng dụng liên hệ: ' . ( ! empty( $contact_apps ) ? implode( ', ', $contact_apps ) : 'Không chọn' ) . "\n";
-		$text .= "Vui lòng gọi lại tư vấn ngay & không phản hồi email này.\n";
-		$text .= 'Signature: Minh Thang Transport Flow';
-
-		wp_remote_post(
-			'https://api.telegram.org/bot' . $token . '/sendMessage',
-			array(
-				'timeout' => 10,
-				'body'    => array(
-					'chat_id' => $chat_id,
-					'text'    => $text,
-				),
 			)
 		);
 	}
@@ -408,15 +366,6 @@ class MTTF_Ajax {
 		}
 
 		return $seconds;
-	}
-
-	private static function get_phone_last_three( $phone ) {
-		$digits = preg_replace( '/\D+/', '', (string) $phone );
-		if ( strlen( $digits ) < 3 ) {
-			return $digits;
-		}
-
-		return substr( $digits, -3 );
 	}
 
 	private static function is_suspicious_user_agent() {

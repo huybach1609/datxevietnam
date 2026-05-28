@@ -11,9 +11,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $footer_settings = function_exists( 'dxvn_get_footer_settings' ) ? dxvn_get_footer_settings() : array();
 $partners_title  = $footer_settings['partners_title'] ?? 'Đối tác của chúng tôi';
-$partners        = isset( $footer_settings['partners'] ) && is_array( $footer_settings['partners'] ) ? $footer_settings['partners'] : array();
+$partners_raw    = isset( $footer_settings['partners'] ) && is_array( $footer_settings['partners'] ) ? $footer_settings['partners'] : array();
+$partners        = function_exists( 'dxvn_get_footer_partners_for_display' ) ? dxvn_get_footer_partners_for_display( $partners_raw ) : $partners_raw;
 $brand_desc      = $footer_settings['brand_description'] ?? '';
-$brand_contacts  = function_exists( 'dxvn_parse_footer_contact_items' ) ? dxvn_parse_footer_contact_items( $footer_settings['brand_contact_items'] ?? '' ) : array();
+$brand_contacts  = function_exists( 'dxvn_get_footer_brand_contacts' ) ? dxvn_get_footer_brand_contacts() : array();
 $office_title    = $footer_settings['office_title'] ?? 'Danh sách văn phòng';
 $office_map_text = $footer_settings['office_map_label'] ?? 'Xem bản đồ';
 $office_items    = function_exists( 'dxvn_parse_footer_links' ) ? dxvn_parse_footer_links( $footer_settings['office_items'] ?? '' ) : array();
@@ -41,8 +42,11 @@ $services_expandable = $services_total > $services_limit;
 						$render_partners = array_merge( $partners, $partners );
 						foreach ( $render_partners as $partner ) :
 							$image_id  = absint( $partner['image_id'] ?? 0 );
-							$image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
-							if ( ! $image_url ) {
+							$image_url = (string) ( $partner['_display_image_url'] ?? '' );
+							if ( '' === $image_url && function_exists( 'dxvn_resolve_footer_partner_image_url' ) ) {
+								$image_url = dxvn_resolve_footer_partner_image_url( $partner );
+							}
+							if ( '' === $image_url ) {
 								continue;
 							}
 
@@ -50,12 +54,48 @@ $services_expandable = $services_total > $services_limit;
 							$link = $partner['link'] ?? '';
 							?>
 							<div class="dxvn-footer__partner-item">
-								<?php if ( '' !== $link ) : ?>
-									<a href="<?php echo esc_url( $link ); ?>" target="_blank" rel="noopener noreferrer">
-										<img src="<?php echo esc_url( $image_url ); ?>" alt="<?php echo esc_attr( $name ); ?>" loading="lazy" />
+								<?php if ( '' !== $link && '#' !== $link ) : ?>
+									<a href="<?php echo esc_url( $link ); ?>" target="_blank" rel="noopener noreferrer"<?php echo '' !== $name ? ' title="' . esc_attr( $name ) . '"' : ''; ?>>
+										<?php
+										if ( $image_id > 0 ) {
+											echo wp_get_attachment_image(
+												$image_id,
+												'medium',
+												false,
+												array(
+													'class'    => 'dxvn-footer__partner-logo',
+													'alt'      => $name,
+													'loading'  => 'lazy',
+													'decoding' => 'async',
+												)
+											);
+										} else {
+											?>
+											<img class="dxvn-footer__partner-logo" src="<?php echo esc_url( $image_url ); ?>" alt="<?php echo esc_attr( $name ); ?>" loading="lazy" decoding="async" width="120" height="48" />
+											<?php
+										}
+										?>
 									</a>
 								<?php else : ?>
-									<img src="<?php echo esc_url( $image_url ); ?>" alt="<?php echo esc_attr( $name ); ?>" loading="lazy" />
+									<?php
+									if ( $image_id > 0 ) {
+										echo wp_get_attachment_image(
+											$image_id,
+											'medium',
+											false,
+											array(
+												'class'    => 'dxvn-footer__partner-logo',
+												'alt'      => $name,
+												'loading'  => 'lazy',
+												'decoding' => 'async',
+											)
+										);
+									} else {
+										?>
+										<img class="dxvn-footer__partner-logo" src="<?php echo esc_url( $image_url ); ?>" alt="<?php echo esc_attr( $name ); ?>" loading="lazy" decoding="async" width="120" height="48" />
+										<?php
+									}
+									?>
 								<?php endif; ?>
 							</div>
 						<?php endforeach; ?>
@@ -90,7 +130,12 @@ $services_expandable = $services_total > $services_limit;
 							$value_trimmed    = trim( $contact_value );
 							$phone_digits     = preg_replace( '/[^0-9+]/', '', $value_trimmed );
 
-							if ( false !== strpos( $label_normalized, 'hotline' ) || false !== strpos( $label_normalized, 'so dien thoai' ) || false !== strpos( $label_normalized, 'dien thoai' ) ) {
+							if (
+								false !== strpos( $label_normalized, 'hotline' )
+								|| false !== strpos( $label_normalized, 'di dong' )
+								|| false !== strpos( $label_normalized, 'so dien thoai' )
+								|| false !== strpos( $label_normalized, 'dien thoai' )
+							) {
 								if ( ! empty( $phone_digits ) ) {
 									$contact_url = 'tel:' . $phone_digits;
 								}

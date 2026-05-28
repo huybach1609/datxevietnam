@@ -33,7 +33,7 @@ class MTTF_Contact_Counter {
 	public static function run_hourly_counter() {
 		$route_ids = get_posts(
 			array(
-				'post_type'      => MTTF_CPT::get_article_post_type(),
+				'post_type'      => 'tuyen_xe',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
 				'fields'         => 'ids',
